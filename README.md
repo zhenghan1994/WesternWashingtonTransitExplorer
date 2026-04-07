@@ -1,5 +1,5 @@
 # WesternWashingtonTransitExplorer
-Interactive transit map of Eastern Washington
+Interactive transit map of Western Washington
 # Seattle CSA Transit Network Map
 
 An interactive map of the Seattle Combined Statistical Area transit network, built with Leaflet.js and live data from the ArcGIS FeatureServer.
