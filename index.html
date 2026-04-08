@@ -111,6 +111,12 @@
   #agency-tooltip{position:fixed;background:#1a2538;color:#dce8f5;font-family:var(--sans);font-size:10px;font-weight:400;padding:3px 8px;border-radius:4px;white-space:nowrap;border:1px solid rgba(100,160,255,0.2);pointer-events:none;z-index:99999;display:none;}
   .transit-card-name{font-size:11px;color:var(--text);line-height:1.3}
 
+  /* Legend */
+  .legend-item{display:flex;align-items:center;gap:10px;padding:7px 16px;font-size:12px;}
+  .legend-swatch{width:24px;height:4px;border-radius:2px;flex-shrink:0;}
+  .legend-label{color:var(--text);flex:1;line-height:1.3;}
+  .legend-count{font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0;}
+
   /* Leaflet overrides */
   .leaflet-popup-content-wrapper{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:var(--sans);font-size:12px}
   .leaflet-popup-tip{background:var(--panel)}
@@ -142,10 +148,10 @@
     </div>
 
     <div class="sidebar-section" style="padding-bottom:6px;">
-      <div class="section-label">Layers</div>
+      <div class="section-label">Service Level</div>
     </div>
-    <div class="layers-list" id="layersList">
-      <div style="padding:20px 16px;color:var(--muted);font-size:12px;">Discovering layers…</div>
+    <div class="layers-list" id="legendList">
+      <div style="padding:20px 16px;color:var(--muted);font-size:12px;">Loading…</div>
     </div>
   </div>
 
@@ -206,9 +212,9 @@ const DOMAINS = {
     105:'Very Frequent (<12 min)',
     106:'Frequent (≤15 min)',                         107:'Partial Frequent (15-30 min)',
     108:'Regular (30-40 min)',                        109:'Regular (40-60 min)',
-    113:'Limited (60+ min)',						  116:'Peak Only',
-	199:'Dial-A-Ride Transit (DART)', 				  206:'Less Frequent (20 min)',
-	207:'Regular (20-30 min)',                        297:'Limited Trips Only',
+    113:'Limited (60+ min)',
+    116:'Peak Only',                                  199:'Dial-A-Ride Transit (DART)',
+    207:'Regular (20-30 min)',                        297:'Limited Trips Only',
     298:'Weekend Service Only',                       299:'Snow Route Only',
     998:'No Service Currently',                       999:'No Service'
   },
@@ -522,20 +528,25 @@ function toGeoJSON(feature, geomType) {
   return { type:'Feature', geometry, properties:feature.attributes };
 }
 
-// ── Layer sidebar ────────────────────────────────────────────────────────────
-function buildLayerUI(defs) {
-  const container = $('layersList');
+// ── Legend ───────────────────────────────────────────────────────────────────
+const SL_DRAW_ORDER_LEGEND = [105,104,106,206,107,207,108,109,113,116,100,199];
+const slCounts = {}; // ServiceLevel → count of features
+
+function buildLegend() {
+  const container = $('legendList');
   container.innerHTML = '';
-  defs.forEach(def => {
+  SL_DRAW_ORDER_LEGEND.forEach(code => {
+    const count = slCounts[code];
+    if (!count) return; // only show visible categories
+    const src = SL_META[code] ?? SL_COLOR_MAP[code];
+    if (!src) return;
+    const label = decodeDomain('ServiceLevel', code) ?? String(code);
     const item = document.createElement('div');
-    item.className = 'layer-item active';
-    const badges = def.badges.map(b=>`<span class="badge ${b.cls}">${b.label}</span>`).join('');
+    item.className = 'legend-item';
     item.innerHTML = `
-      <div class="layer-active-dot"></div>
-      <div class="layer-swatch" style="background:${def.color}"></div>
-      <div class="layer-name">${def.name}</div>
-      <div class="layer-badges">${badges}</div>
-      <div class="layer-count" id="cnt-${def.id}">…</div>`;
+      <div class="legend-swatch" style="background:${src.bg}"></div>
+      <div class="legend-label">${label}</div>
+      <div class="legend-count">${count.toLocaleString()}</div>`;
     container.appendChild(item);
   });
 }
@@ -631,19 +642,13 @@ async function init() {
         updateStats();
         $(`cnt-${def.id}`).textContent = features.length.toLocaleString();
 
-        // Collect GeoIDs from loaded route features (Stage 2 prep)
+        // Collect GeoIDs and count by ServiceLevel
         features.forEach(f => {
           const gid = f.attributes?.GeoID ?? f.attributes?.geoid ?? f.attributes?.GEOID;
           if (gid != null) routeGeoIDs.add(gid);
+          const sl = f.attributes?.ServiceLevel;
+          if (sl != null) slCounts[sl] = (slCounts[sl] ?? 0) + 1;
         });
-
-        // Sort features so higher frequency draws on top (lower SL code = higher frequency)
-        const SL_DRAW_ORDER = [116,113,109,108,207,107,206,106,104,105,100,199];
-        const slRank = sl => {
-          const idx = SL_DRAW_ORDER.indexOf(sl);
-          return idx === -1 ? -1 : idx; // unknown codes draw first
-        };
-        features.sort((a, b) => slRank(a.attributes?.ServiceLevel) - slRank(b.attributes?.ServiceLevel));
 
         const geojsonFeatures = features.map(f => toGeoJSON(f, geomType)).filter(Boolean);
 
@@ -733,6 +738,7 @@ async function init() {
       }
     }
 
+    buildLegend();
     setLoader(false);
     setStatus('', `${stats.routes.toLocaleString()} routes loaded`);
     const dot = $('statusPill').querySelector('.dot');
