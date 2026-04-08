@@ -637,6 +637,14 @@ async function init() {
           if (gid != null) routeGeoIDs.add(gid);
         });
 
+        // Sort features so higher frequency draws on top (lower SL code = higher frequency)
+        const SL_DRAW_ORDER = [116,113,109,108,207,107,206,106,104,105,100,199];
+        const slRank = sl => {
+          const idx = SL_DRAW_ORDER.indexOf(sl);
+          return idx === -1 ? -1 : idx; // unknown codes draw first
+        };
+        features.sort((a, b) => slRank(a.attributes?.ServiceLevel) - slRank(b.attributes?.ServiceLevel));
+
         const geojsonFeatures = features.map(f => toGeoJSON(f, geomType)).filter(Boolean);
 
         const group = L.geoJSON({ type:'FeatureCollection', features:geojsonFeatures }, {
