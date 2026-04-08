@@ -578,7 +578,7 @@ async function init() {
       badges:[{cls:'route',label:'ROUTE'}]
     }));
 
-    buildLayerUI(spatialDefs);
+
 
     // Date string (shared by route + table filters)
     const TODAY = new Date();
@@ -640,7 +640,8 @@ async function init() {
 
         stats.routes   += features.length;
         updateStats();
-        $(`cnt-${def.id}`).textContent = features.length.toLocaleString();
+        const cntEl = $(`cnt-${def.id}`);
+        if (cntEl) cntEl.textContent = features.length.toLocaleString();
 
         // Collect GeoIDs and count by ServiceLevel
         features.forEach(f => {
@@ -747,7 +748,7 @@ async function init() {
   } catch(err) {
     setLoader(false);
     setStatus('error','Load failed');
-    $('layersList').innerHTML = `<div style="padding:16px;color:var(--red);font-size:12px;">${err.message}</div>`;
+    $('legendList').innerHTML = `<div style="padding:16px;color:var(--red);font-size:12px;">${err.message}</div>`;
     console.error(err);
   }
 }
