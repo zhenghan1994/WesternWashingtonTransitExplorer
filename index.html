@@ -117,12 +117,34 @@
   .legend-label{color:var(--text);flex:1;line-height:1.3;}
   .legend-count{font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0;}
 
+  /* Mode + period switchers */
+  .mode-switcher,.period-switcher{display:flex;gap:4px;margin-top:8px;}
+  .mode-btn,.period-btn{flex:1;padding:5px 2px;border-radius:4px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .15s;}
+  .mode-btn:hover,.period-btn:hover{color:var(--text);border-color:rgba(100,160,255,0.3);}
+  .mode-btn.active,.period-btn.active{background:rgba(79,195,247,.15);border-color:rgba(79,195,247,.4);color:var(--accent);}
+
   /* Leaflet overrides */
   .leaflet-popup-content-wrapper{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:var(--sans);font-size:12px}
   .leaflet-popup-tip{background:var(--panel)}
   .leaflet-control-zoom a{background:var(--panel)!important;color:var(--text)!important;border-color:var(--border)!important}
   .leaflet-control-zoom a:hover{background:var(--panel2)!important}
   .leaflet-control-attribution{display:none}
+
+  /* ── Mobile: bottom bar layout ─────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    .main{flex-direction:column;}
+    .sidebar{width:100%;height:280px;flex-shrink:0;border-right:none;border-top:1px solid var(--border);order:2;}
+    .sidebar-section{padding:8px 14px;}
+    .layers-list{flex:none;}
+    #legendList{display:flex;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:6px 10px;gap:6px;align-items:stretch;height:100px;}
+    .legend-item{flex-direction:column;align-items:center;padding:8px 10px;gap:5px;flex-shrink:0;background:var(--panel2);border-radius:6px;border:1px solid var(--border);min-width:80px;text-align:center;}
+    .legend-swatch{width:32px;height:5px;}
+    .legend-label{font-size:10px;line-height:1.3;}
+    .legend-count{font-size:9px;}
+    .main > div:not(.sidebar){flex:1;min-height:0;order:1;}
+    .info-panel{width:calc(100% - 24px);left:12px;right:12px;bottom:288px;max-height:40vh;}
+    .leaflet-bottom.leaflet-right{bottom:288px !important;}
+  }
 </style>
 </head>
 <body>
@@ -140,19 +162,24 @@
 <div class="main" style="position:relative;">
 
   <div class="sidebar">
-    <div class="sidebar-section">
-      <div class="section-label">Statistics</div>
-      <div class="stats-grid">
-        <div class="stat-box"><div class="stat-val" id="statRoutes">—</div><div class="stat-label">Routes</div></div>
-      </div>
-    </div>
 
-    <div class="sidebar-section" style="padding-bottom:6px;">
-      <div class="section-label">Service Level</div>
+    <div class="sidebar-section" style="padding-bottom:10px;">
+      <div class="section-label">Map View</div>
+      <div class="mode-switcher" id="modeSwitcher">
+        <button class="mode-btn active" data-mode="sl">Svc Level</button>
+        <button class="mode-btn" data-mode="trolley">Trolley Wire</button>
+        <button class="mode-btn" data-mode="row">Transit ROW</button>
+      </div>
+      <div class="period-switcher" id="periodSwitcher">
+        <button class="period-btn active" data-period="ServiceLevel">Daytime</button>
+        <button class="period-btn" data-period="ServiceLevel_AMPeak">AM Peak</button>
+        <button class="period-btn" data-period="ServiceLevel_PMPeak">PM Peak</button>
+      </div>
     </div>
     <div class="layers-list" id="legendList">
       <div style="padding:20px 16px;color:var(--muted);font-size:12px;">Loading…</div>
     </div>
+
   </div>
 
   <div style="flex:1;position:relative;display:flex;flex-direction:column;min-height:0;">
@@ -207,16 +234,15 @@ const isRoute = n => /route/i.test(n) && !/table/i.test(n) && !/metro/i.test(n) 
 // ── Coded domain lookups ─────────────────────────────────────────────────────
 const DOMAINS = {
   ServiceLevel_v2: {
-    100:'Light Rail',                                 101:'Arterial Rapid Transit (RapidRide/SWIFT/STREAM/STRIDE)',
-    102:'Arterial Rapid Transit (RapidRide Candidate)',104:'Frequent (10-15 min)',
-    105:'Very Frequent (<12 min)',
-    106:'Frequent (≤15 min)',                         107:'Partial Frequent (15-30 min)',
-    108:'Regular (30-40 min)',                        109:'Regular (40-60 min)',
-    113:'Limited (60+ min)',
-    116:'Peak Only',                                  199:'Dial-A-Ride Transit (DART)',
-    207:'Regular (20-30 min)',                        297:'Limited Trips Only',
-    298:'Weekend Service Only',                       299:'Snow Route Only',
-    998:'No Service Currently',                       999:'No Service'
+    100:'Light Rail',
+    105:'Very Frequent (≤10 min)',
+    104:'Frequent (10-15 min)',
+    106:'Frequent (15 min)',
+    107:'Partial Frequent (15-30 min)',
+    108:'Regular (30 min)',
+    109:'Regular (>30 min)',
+    116:'Peak Only',
+    199:'Dial-A-Ride Transit (DART)'
   },
   TrolleyWire: {
     0:'No', 1:'Yes', 2:'Yes - No scheduled service', 3:'Under Construction', 4:'Planned'
@@ -257,21 +283,25 @@ const DOMAINS = {
 
 // ── Service Level color map ───────────────────────────────────────────────────
 const SL_META = {
-  100: { cat:'Rail infrastructure',       bg:'#7F77DD', text:'#26215C' },
-  104: { cat:'High frequency',            bg:'#9FE1CB', text:'#085041' },
-  105: { cat:'High frequency',            bg:'#1D9E75', text:'#04342C' },
-  106: { cat:'High frequency',            bg:'#5DCAA5', text:'#04342C' },
-  107: { cat:'Moderate frequency',        bg:'#BA7517', text:'#412402' },
-  207: { cat:'Moderate frequency',        bg:'#EF9F27', text:'#412402' },
-  108: { cat:'Moderate frequency',        bg:'#FAC775', text:'#412402' },
-  109: { cat:'Low frequency',             bg:'#D85A30', text:'#4A1B0C' },
-  113: { cat:'Low frequency',             bg:'#F0997B', text:'#4A1B0C' },
-  116: { cat:'Limited / special',         bg:'#E24B4A', text:'#501313' },
-  297: { cat:'Limited / special',         bg:'#F7C1C1', text:'#501313' },
-  298: { cat:'Conditional / inactive',    bg:'#888780', text:'#2C2C2A' },
-  299: { cat:'Conditional / inactive',    bg:'#B4B2A9', text:'#2C2C2A' },
-  199: { cat:'Demand-responsive',         bg:'#534AB7', text:'#26215C' },
+  100: { cat:'Rail infrastructure',  bg:'#FFE566', text:'#3D3000' },
+  104: { cat:'High frequency',       bg:'#56B4E9', text:'#0A2D42' },
+  105: { cat:'High frequency',       bg:'#FF5FA3', text:'#4D0D28' },
+  106: { cat:'High frequency',       bg:'#88CCAA', text:'#1A3D2C' },
+  107: { cat:'Partial frequency',    bg:'#6AAA8C', text:'#3D2800' },
+  108: { cat:'Regular',              bg:'#CC7722', text:'#3A1E00' },
+  109: { cat:'Regular',              bg:'#994422', text:'#301200' },
+  116: { cat:'Limited / special',    bg:'#773388', text:'#250D2C' },
+  199: { cat:'Demand-responsive',    bg:'#9977CC', text:'#241545' },
 };
+// ── Service Level normalization ───────────────────────────────────────────────
+// Maps consolidated codes to their canonical representative
+function normalizeSL(val) {
+  if (val == null) return val;
+  const v = Number(val);
+  if (v === 207 || v === 206) return 107; // → Regular (15-30 min)
+  if (v === 113 || v === 110) return 109; // → Regular (>30 min)
+  return v;
+}
 
 // ── Agency color map ─────────────────────────────────────────────────────────
 const AGENCY_COLORS = {
@@ -294,6 +324,7 @@ const AGENCY_COLORS = {
 const FIELD_DOMAIN = {
   ServiceLevel:        'ServiceLevel_v2',
   ServiceLevel_AMPeak: 'ServiceLevel_v2',
+  ServiceLevel_Midday: 'ServiceLevel_v2',
   ServiceLevel_PMPeak: 'ServiceLevel_v2',
   ServiceLevel_2027:   'ServiceLevel_v2',
   ServiceLevel_2032:   'ServiceLevel_v2',
@@ -333,8 +364,145 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/
   attribution: 'Esri World Imagery'
 }).addTo(map);
 
-let layerGroups = {};
-let stats = { routes:0};
+let layerGroups  = {};                // SL-filtered layers (loaded eagerly)
+let layerGroupsAll = {};              // date-only filtered layers (loaded lazily for overlay modes)
+let layerGeomTypes = {};              // def.id → geomType, cached to avoid re-fetching
+let activePeriod = 'ServiceLevel';
+let displayMode  = 'sl';             // 'sl' | 'trolley' | 'row'
+let modeChanging = false;
+
+// Data stores — two sets, one per dataset
+const allFeatureProps     = [];      // SL-filtered: for period legend recount
+const allGeoJSONFeatures  = [];      // SL-filtered: (unused post-overlay refactor, kept for compat)
+const allFeaturePropsAll  = [];      // date-only filtered: for overlay legends
+const allGeoJSONFeaturesAll = [];    // date-only filtered: for trolley zoom extent
+
+// Stored during init() for lazy overlay loading
+let _spatialDefsGlobal   = [];
+let _dateFilterAllGlobal = '';
+let overlayLayersLoaded  = false;
+
+// ── Period colour helpers ─────────────────────────────────────────────────────
+function getSlColor(val) {
+  const nval = normalizeSL(val);
+  if (nval == null) return '#4fc3f7';
+  const src = SL_COLOR_MAP[nval] ?? SL_META[nval];
+  return src ? src.bg : '#4fc3f7';
+}
+function featureColorForPeriod(props) {
+  const val = props?.[activePeriod];
+  return val == null ? '#4fc3f7' : getSlColor(val);
+}
+
+// ── Overlay colour tables ─────────────────────────────────────────────────────
+const MUTED = { color:'#252d3d', weight:1, opacity:0.22, fillOpacity:0 };
+
+const TROLLEY_STYLE = {
+  1: { color:'#00CFFF', weight:3,   opacity:0.95, fillOpacity:0 }, // Yes — active wire
+  2: { color:'#3A7CA5', weight:2.5, opacity:0.80, fillOpacity:0 }, // Yes — no scheduled svc
+  3: { color:'#FFAA00', weight:2.5, opacity:0.85, fillOpacity:0 }, // Under construction
+  4: { color:'#5588AA', weight:2,   opacity:0.65, fillOpacity:0 }, // Planned
+};
+
+const ROW_STYLE = {
+  2: { color:'#FFD700', weight:3, opacity:0.90, fillOpacity:0 }, // Time Restricted BAT
+  3: { color:'#FF8C00', weight:3, opacity:0.90, fillOpacity:0 }, // Managed Lane
+  4: { color:'#00CC66', weight:3, opacity:0.90, fillOpacity:0 }, // All-day Transit-Only
+  5: { color:'#00AAAA', weight:3, opacity:0.90, fillOpacity:0 }, // FAB Lane
+  6: { color:'#00FFCC', weight:3, opacity:0.90, fillOpacity:0 }, // Dedicated Transit Only
+  7: { color:'#CC88FF', weight:3, opacity:0.90, fillOpacity:0 }, // Grade-Separated Rail
+  9: { color:'#FF6600', weight:3, opacity:0.90, fillOpacity:0 }, // Under Construction
+};
+
+// ── Single source of truth for feature style ──────────────────────────────────
+function getFeatureStyle(props) {
+  if (displayMode === 'trolley') return TROLLEY_STYLE[props?.Electrified]  ?? MUTED;
+  if (displayMode === 'row')     return ROW_STYLE[props?.TransitROW]       ?? MUTED;
+  const c = featureColorForPeriod(props);
+  return { color:c, weight:2, opacity:0.9, fillColor:c, fillOpacity:0.2, offset:0.8 };
+}
+
+// Styles whichever layer set is currently active
+function refreshBaseStyle() {
+  const groups = displayMode === 'sl' ? layerGroups : layerGroupsAll;
+  Object.values(groups).forEach(group => {
+    group.setStyle(feature => getFeatureStyle(feature.properties));
+  });
+}
+
+// ── Lazy overlay layer loader ─────────────────────────────────────────────────
+// Fetches all date-valid segments without ServiceLevel exclusion
+async function loadOverlayLayers() {
+  if (overlayLayersLoaded) return;
+  for (let i = 0; i < _spatialDefsGlobal.length; i++) {
+    const def = _spatialDefsGlobal[i];
+    const pct = 10 + Math.round(((i+1)/_spatialDefsGlobal.length)*80);
+    setLoader(true, `Loading "${def.name}"…`, 'Including all service levels…', pct);
+    try {
+      const geomType = layerGeomTypes[def.id] || 'esriGeometryPolyline';
+      const features = await fetchAll(def.id, _dateFilterAllGlobal);
+      const geojsonFeatures = features.map(f => toGeoJSON(f, geomType)).filter(Boolean);
+      features.forEach(f => allFeaturePropsAll.push(f.attributes || {}));
+      geojsonFeatures.forEach(f => allGeoJSONFeaturesAll.push(f));
+      const group = L.geoJSON({ type:'FeatureCollection', features:geojsonFeatures }, {
+        style: feature => getFeatureStyle(feature.properties),
+        pointToLayer: (feature, latlng) => {
+          const s = getFeatureStyle(feature.properties);
+          return L.circleMarker(latlng, {
+            radius:5, fillColor:s.color, color:'#fff', weight:1, opacity:s.opacity??1, fillOpacity:0.9
+          });
+        },
+        onEachFeature: (feature, lyr) => {
+          lyr.on('click', () => showInfoPanel(def.name, feature.properties || {}));
+          lyr.on('mouseover', function() { this.setStyle({weight:5, opacity:1}); });
+          lyr.on('mouseout',  function() { this.setStyle(getFeatureStyle(feature.properties)); });
+        }
+      });
+      layerGroupsAll[def.id] = group; // not added to map yet
+    } catch(err) {
+      console.error(`Overlay layer "${def.name}" failed:`, err);
+    }
+  }
+  overlayLayersLoaded = true;
+}
+
+// ── Display mode switcher ─────────────────────────────────────────────────────
+async function setDisplayMode(mode) {
+  if (modeChanging || mode === displayMode) return;
+  modeChanging = true;
+  try {
+    displayMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === mode);
+    });
+    $('periodSwitcher').style.display = mode === 'sl' ? 'flex' : 'none';
+
+    if (mode === 'sl') {
+      Object.values(layerGroupsAll).forEach(g => { try { map.removeLayer(g); } catch(e){} });
+      Object.values(layerGroups).forEach(g => { try { g.addTo(map); } catch(e){} });
+      refreshBaseStyle();
+      buildLegend();
+    } else {
+      Object.values(layerGroups).forEach(g => { try { map.removeLayer(g); } catch(e){} });
+      if (!overlayLayersLoaded) {
+        await loadOverlayLayers();
+        setLoader(false);
+      }
+      Object.values(layerGroupsAll).forEach(g => { try { g.addTo(map); } catch(e){} });
+      refreshBaseStyle();
+      buildLegend();
+      if (mode === 'trolley') {
+        const electrified = allGeoJSONFeaturesAll.filter(f => Number(f.properties?.Electrified ?? 0) !== 0);
+        if (electrified.length) {
+          const bounds = L.geoJSON({ type:'FeatureCollection', features:electrified }).getBounds();
+          if (bounds.isValid()) map.fitBounds(bounds, { padding:[40,40] });
+        }
+      }
+    }
+  } finally {
+    modeChanging = false;
+  }
+}
 
 // ── UI helpers ───────────────────────────────────────────────────────────────
 const $  = id => document.getElementById(id);
@@ -344,9 +512,6 @@ const setLoader = (vis,txt='',sub='',pct=null) => {
   $('loaderText').textContent = txt;
   $('loaderSub').textContent  = sub;
   if (pct!==null) $('progressFill').style.width = pct+'%';
-};
-const updateStats = () => {
-  $('statRoutes').textContent   = stats.routes.toLocaleString();
 };
 
 function formatVal(v) {
@@ -361,6 +526,7 @@ const FIELD_ALIAS = {
   SegmentName:         'Segment Name',
   ServiceLevel:        'Best Daytime Service Level',
   ServiceLevel_AMPeak: 'Best AM Peak Service Level',
+  ServiceLevel_Midday: 'Best Mid-day Service Level',
   ServiceLevel_PMPeak: 'Best PM Peak Service Level',
   ServiceLevel_2027:   '2027 Service Level',
   ServiceLevel_2032:   '2032 Service Level',
@@ -372,10 +538,11 @@ const FIELD_ALIAS = {
 };
 
 function slBarSeg(period, val) {
-  const src = SL_META[val] ?? SL_COLOR_MAP[val];
+  const nval = normalizeSL(val);
+  const src = SL_COLOR_MAP[nval] ?? SL_META[nval];
   const bg  = src ? src.bg   : 'rgba(100,160,255,0.08)';
   const col = src ? src.text : 'var(--muted)';
-  const label = val != null ? (decodeDomain('ServiceLevel', val) ?? '—') : '—';
+  const label = nval != null ? (decodeDomain('ServiceLevel', nval) ?? '—') : '—';
   return '<div class="sl-bar-seg" style="background:' + bg + ';color:' + col + '">'
     + '<span class="sl-bar-period">' + period + '</span>'
     + '<span class="sl-bar-label">' + label + '</span>'
@@ -384,7 +551,7 @@ function slBarSeg(period, val) {
 
 function renderRows(attrs) {
   const amVal = attrs.ServiceLevel_AMPeak;
-  const mdVal = attrs.ServiceLevel;
+  const mdVal = attrs.ServiceLevel_Midday;
   const pmVal = attrs.ServiceLevel_PMPeak;
 
   const hasBar = amVal != null || mdVal != null || pmVal != null;
@@ -392,7 +559,7 @@ function renderRows(attrs) {
 
   if (hasBar) {
     const amEffective = (amVal > 997) ? null : amVal;
-    const mdEffective = (mdVal === 116 || mdVal > 997) ? null : (mdVal === 104) ? 106 : mdVal;
+    const mdEffective = (mdVal > 997) ? null : amVal;
     const pmEffective = (pmVal > 997) ? null : pmVal;
     out += '<div class="info-section-title" style="margin-top:0">Service Level</div>';
     out += '<div class="sl-bar">'
@@ -443,7 +610,8 @@ function showInfoPanel(layerName, props) {
     // Group by ServiceLevel, sorted ascending by numeric value (nulls last)
     const groups = {};
     activeRows.forEach(r => {
-      const slKey = r.ServiceLevel != null ? r.ServiceLevel : '__null__';
+      const slRaw = r.ServiceLevel != null ? normalizeSL(r.ServiceLevel) : null;
+      const slKey = slRaw != null ? slRaw : '__null__';
       if (!groups[slKey]) groups[slKey] = [];
       groups[slKey].push(r);
     });
@@ -455,7 +623,7 @@ function showInfoPanel(layerName, props) {
 
     sortedKeys.forEach(slKey => {
       const slLabel = slKey === '__null__' ? 'Unknown' : (decodeDomain('ServiceLevel', Number(slKey)) ?? slKey);
-      const src = SL_META[Number(slKey)] ?? SL_COLOR_MAP[Number(slKey)];
+      const src = SL_COLOR_MAP[Number(slKey)] ?? SL_META[Number(slKey)];
       const pillStyle = src ? 'background:' + src.bg + ';color:' + src.text : 'background:var(--panel2);color:var(--muted)';
       html += `<div class="transit-group-label"><span class="tgl-pill" style="${pillStyle}">${slLabel}</span><span class="tgl-line"></span></div>`;
       // Deduplicate by route number within each ServiceLevel group
@@ -529,16 +697,46 @@ function toGeoJSON(feature, geomType) {
 }
 
 // ── Legend ───────────────────────────────────────────────────────────────────
-const SL_DRAW_ORDER_LEGEND = [105,104,106,206,107,207,108,109,113,116,100,199];
+const SL_DRAW_ORDER_LEGEND = [100,105,104,106,107,108,109,116,199];
 const slCounts = {}; // ServiceLevel → count of features
 
-function buildLegend() {
+function buildLegend(slCounts_override) {
   const container = $('legendList');
   container.innerHTML = '';
+
+  if (displayMode === 'trolley') {
+    // Only show values present in the broader dataset
+    const present = new Set(allFeaturePropsAll.map(p => p.Electrified).filter(v => v != null && Number(v) !== 0));
+    [[1,'#00CFFF'],[2,'#3A7CA5'],[3,'#FFAA00'],[4,'#5588AA']].forEach(([code, color]) => {
+      if (!present.has(code) && !present.has(String(code))) return;
+      const label = DOMAINS.TrolleyWire[code] ?? String(code);
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      item.innerHTML = `<div class="legend-swatch" style="background:${color}"></div><div class="legend-label">${label}</div>`;
+      container.appendChild(item);
+    });
+    return;
+  }
+
+  if (displayMode === 'row') {
+    const present = new Set(allFeaturePropsAll.map(p => p.TransitROW).filter(v => v != null && Number(v) !== 1));
+    [[2,'#FFD700'],[3,'#FF8C00'],[4,'#00CC66'],[5,'#00AAAA'],[6,'#00FFCC'],[7,'#CC88FF'],[9,'#FF6600']].forEach(([code, color]) => {
+      if (!present.has(code) && !present.has(String(code))) return;
+      const label = DOMAINS.TransitROW[code] ?? String(code);
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      item.innerHTML = `<div class="legend-swatch" style="background:${color}"></div><div class="legend-label">${label}</div>`;
+      container.appendChild(item);
+    });
+    return;
+  }
+
+  // Service Level mode
+  const counts = slCounts_override ?? slCounts;
   SL_DRAW_ORDER_LEGEND.forEach(code => {
-    const count = slCounts[code];
-    if (!count) return; // only show visible categories
-    const src = SL_META[code] ?? SL_COLOR_MAP[code];
+    const count = counts[code];
+    if (!count) return;
+    const src = SL_COLOR_MAP[code] ?? SL_META[code];
     if (!src) return;
     const label = decodeDomain('ServiceLevel', code) ?? String(code);
     const item = document.createElement('div');
@@ -551,10 +749,35 @@ function buildLegend() {
   });
 }
 
+// ── Period switcher ───────────────────────────────────────────────────────────
+function switchPeriod(field) {
+  activePeriod = field;
+  document.querySelectorAll('.period-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.period === field);
+  });
+  refreshBaseStyle();
+  const counts = {};
+  allFeatureProps.forEach(props => {
+    const sl = normalizeSL(props[field]);
+    if (sl != null) counts[sl] = (counts[sl] ?? 0) + 1;
+  });
+  buildLegend(counts);
+}
+
 // ── Transit table lookup (populated after routes load) ───────────────────────
-let transitLookup = {}; // GeoID → array of row attributes
-let SL_COLOR_MAP = {};      // ServiceLevel value → {bg, text} from ArcGIS renderer
-let routeLookup = {}; // Route_Bound / Segment_RouteBound → {agency, short}
+let transitLookup = {};
+let SL_COLOR_MAP  = {};
+let routeLookup   = {};
+
+// ── Event listeners ───────────────────────────────────────────────────────────
+document.getElementById('modeSwitcher').addEventListener('click', e => {
+  const btn = e.target.closest('.mode-btn');
+  if (btn?.dataset.mode) setDisplayMode(btn.dataset.mode);
+});
+document.getElementById('periodSwitcher').addEventListener('click', e => {
+  const btn = e.target.closest('.period-btn');
+  if (btn?.dataset.period) switchPeriod(btn.dataset.period);
+});
 
 // ── Main ─────────────────────────────────────────────────────────────────────
 async function init() {
@@ -593,6 +816,12 @@ async function init() {
       `(EndDate IS NULL OR EndDate >= DATE '${todayStr}') AND ` +
       `ServiceLevel NOT IN (298, 299, 998, 999)`;
 
+    // Store for lazy overlay loading (date-only, no ServiceLevel exclusion)
+    _spatialDefsGlobal   = spatialDefs;
+    _dateFilterAllGlobal =
+      `(Segment_StartDate IS NULL OR Segment_StartDate <= DATE '${todayStr}') AND ` +
+      `(Segment_EndDate IS NULL OR Segment_EndDate >= DATE '${todayStr}')`;
+
     // 2. Load each route layer, collect GeoIDs as we go
     const routeGeoIDs = new Set();
 
@@ -627,10 +856,11 @@ async function init() {
           }
         }
 
+        // Cache geomType for reuse by loadOverlayLayers
+        layerGeomTypes[def.id] = geomType;
+
         function featureColor(props) {
-          const val = props?.ServiceLevel;
-          if (val === null || val === undefined) return defaultColor;
-          return colorLookup[val] ?? colorLookup[String(val)] ?? defaultColor;
+          return featureColorForPeriod(props);
         }
 
         const [totalCnt, features] = await Promise.all([
@@ -638,20 +868,19 @@ async function init() {
           fetchAll(def.id, dateFilter)
         ]);
 
-        stats.routes   += features.length;
-        updateStats();
         const cntEl = $(`cnt-${def.id}`);
         if (cntEl) cntEl.textContent = features.length.toLocaleString();
 
-        // Collect GeoIDs and count by ServiceLevel
+        // Store props for period legend recount; GeoJSON for compat
+        const geojsonFeatures = features.map(f => toGeoJSON(f, geomType)).filter(Boolean);
         features.forEach(f => {
           const gid = f.attributes?.GeoID ?? f.attributes?.geoid ?? f.attributes?.GEOID;
           if (gid != null) routeGeoIDs.add(gid);
-          const sl = f.attributes?.ServiceLevel;
+          allFeatureProps.push(f.attributes || {});
+          const sl = normalizeSL(f.attributes?.ServiceLevel);
           if (sl != null) slCounts[sl] = (slCounts[sl] ?? 0) + 1;
         });
-
-        const geojsonFeatures = features.map(f => toGeoJSON(f, geomType)).filter(Boolean);
+        geojsonFeatures.forEach(f => allGeoJSONFeatures.push(f));
 
         const group = L.geoJSON({ type:'FeatureCollection', features:geojsonFeatures }, {
           style: feature => {
@@ -667,7 +896,7 @@ async function init() {
           onEachFeature: (feature, lyr) => {
             lyr.on('click', () => showInfoPanel(def.name, feature.properties || {}));
             lyr.on('mouseover', function() { this.setStyle({weight:4, opacity:1}); });
-            lyr.on('mouseout',  function() { group.resetStyle(this); });
+            lyr.on('mouseout',  function() { this.setStyle(getFeatureStyle(feature.properties)); });
           }
         });
 
@@ -741,7 +970,7 @@ async function init() {
 
     buildLegend();
     setLoader(false);
-    setStatus('', `${stats.routes.toLocaleString()} routes loaded`);
+    setStatus('', ' loaded');
     const dot = $('statusPill').querySelector('.dot');
     if (dot) dot.style.animation = 'none';
 
