@@ -40,27 +40,6 @@
   .sidebar{width:290px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;z-index:500}
   .sidebar-section{padding:14px 16px;border-bottom:1px solid var(--border)}
   .section-label{font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
-  .stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-  .stat-box{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:10px}
-  .stat-val{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--accent);line-height:1;margin-bottom:3px}
-  .stat-label{font-size:10px;color:var(--muted)}
-  .date-badge{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.15);font-family:var(--mono);font-size:10px;color:var(--accent)}
-  .date-badge span.lbl{color:var(--muted);font-size:9px}
-
-  /* Layers */
-  .layers-list{overflow-y:auto;flex:1;padding:8px 0}
-  .layer-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;transition:background .15s;border-left:3px solid transparent}
-  .layer-item:hover{background:var(--panel2)}
-  .layer-active-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 5px var(--green)}
-  .layer-swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0}
-  .layer-name{font-size:12px;font-weight:500;flex:1;line-height:1.3}
-  .layer-badges{display:flex;gap:3px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;max-width:80px}
-  .badge{font-family:var(--mono);font-size:8px;padding:2px 4px;border-radius:3px;line-height:1.4;white-space:nowrap}
-  .badge.route{background:rgba(79,195,247,.15);color:var(--accent)}
-  .badge.table{background:rgba(243,104,224,.15);color:var(--pink)}
-  .badge.joined{background:rgba(67,224,155,.15);color:var(--green)}
-  .badge.filtered{background:rgba(255,159,67,.15);color:var(--orange)}
-  .layer-count{font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0;min-width:40px;text-align:right}
 
   /* Map */
   #map{flex:1;background:var(--bg);height:100%;width:100%}
@@ -89,14 +68,11 @@
   .info-row:last-child{border-bottom:none}
   .info-key{color:var(--muted);width:105px;flex-shrink:0;font-size:10px;word-break:break-word}
   .info-val{color:var(--text);word-break:break-word}
-  .sl-chip{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:var(--mono);white-space:nowrap}
   .sl-bar{display:flex;gap:3px;margin:4px 0}
   .sl-bar-seg{flex:1;border-radius:4px;padding:5px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:default;position:relative}
   .sl-bar-period{font-family:var(--mono);font-size:9px;font-weight:600;opacity:0.75;letter-spacing:.05em}
   .sl-bar-label{font-size:9px;text-align:center;line-height:1.2;display:none}
   .sl-bar-seg:hover .sl-bar-label{display:block}
-  .record-divider{border:none;border-top:1px dashed var(--border);margin:5px 0}
-
   /* Transit route cards */
   .transit-cards{display:flex;flex-direction:column;gap:6px;margin-top:2px}
   .transit-group-label{display:flex;align-items:center;gap:6px;margin:10px 0 5px}
@@ -104,12 +80,8 @@
   .tgl-pill{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:3px;font-weight:600}
   .tgl-line{flex:1;height:1px;background:var(--border)}
   .transit-card{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;align-items:flex-start}
-  .transit-card-route{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text);line-height:1.3}
-  .transit-card-agency{font-size:10px;color:var(--muted)}
-  .transit-card-header{display:flex;align-items:center;gap:8px}
   .route-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;font-weight:600;line-height:1.5;cursor:default;white-space:nowrap}
   #agency-tooltip{position:fixed;background:#1a2538;color:#dce8f5;font-family:var(--sans);font-size:10px;font-weight:400;padding:3px 8px;border-radius:4px;white-space:nowrap;border:1px solid rgba(100,160,255,0.2);pointer-events:none;z-index:99999;display:none;}
-  .transit-card-name{font-size:11px;color:var(--text);line-height:1.3}
 
   /* Legend */
   .legend-item{display:flex;align-items:center;gap:10px;padding:7px 16px;font-size:12px;}
@@ -118,8 +90,9 @@
   .legend-count{font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0;}
 
   /* Mode + period switchers */
-  .mode-switcher,.period-switcher{display:flex;gap:4px;margin-top:8px;}
-  .mode-btn,.period-btn{flex:1;padding:5px 2px;border-radius:4px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .15s;}
+  .mode-switcher{display:flex;flex-direction:column;gap:4px;margin-top:8px;}
+  .period-switcher{display:flex;gap:4px;margin-top:8px;}
+  .mode-btn,.period-btn{flex:1;padding:6px 8px;border-radius:4px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .15s;text-align:left;}
   .mode-btn:hover,.period-btn:hover{color:var(--text);border-color:rgba(100,160,255,0.3);}
   .mode-btn.active,.period-btn.active{background:rgba(79,195,247,.15);border-color:rgba(79,195,247,.4);color:var(--accent);}
 
@@ -166,14 +139,14 @@
     <div class="sidebar-section" style="padding-bottom:10px;">
       <div class="section-label">Map View</div>
       <div class="mode-switcher" id="modeSwitcher">
-        <button class="mode-btn active" data-mode="sl">Svc Level</button>
-        <button class="mode-btn" data-mode="trolley">Trolley Wire</button>
-        <button class="mode-btn" data-mode="row">Transit ROW</button>
+        <button class="mode-btn active" data-mode="sl">Service Level</button>
+        <button class="mode-btn" data-mode="trolley">Trolleybus Network</button>
+        <button class="mode-btn" data-mode="row">Transit Right-of-way</button>
       </div>
-      <div class="period-switcher" id="periodSwitcher">
+      <div class="period-switcher" id="periodSwitcher" style="display:flex;">
         <button class="period-btn active" data-period="ServiceLevel">Daytime</button>
         <button class="period-btn" data-period="ServiceLevel_AMPeak">AM Peak</button>
-        <button class="period-btn" data-period="ServiceLevel_Midday">Mid-Day</button>
+        <button class="period-btn" data-period="ServiceLevel_Midday">Mid-day</button>
         <button class="period-btn" data-period="ServiceLevel_PMPeak">PM Peak</button>
       </div>
     </div>
@@ -246,7 +219,7 @@ const DOMAINS = {
     199:'Dial-A-Ride Transit (DART)'
   },
   TrolleyWire: {
-    0:'No', 1:'Yes', 2:'Yes - No scheduled service', 3:'Under Construction', 4:'Planned'
+    0:'Inactive', 1:'Active', 2:'Active - No scheduled service', 3:'Under Construction', 4:'Planned'
   },
   TransitROW: {
     1:'None',
@@ -317,10 +290,6 @@ const AGENCY_COLORS = {
   OT:  { bg:'#7B5EA7', text:'#ffffff', name:'Intercity Transit' },
 };
 
-// Short route label for badge display — extracts just the route identifier
-
-
-
 // Field name → domain key
 const FIELD_DOMAIN = {
   ServiceLevel:        'ServiceLevel_v2',
@@ -345,18 +314,12 @@ const DISPLAY_FIELDS = [
   'TransitROW',
 ];
 
-const DISPLAY_FIELDS_TRANSIT = [
-   'Route',
-   'ServiceLevel'
-];
 function decodeDomain(field, value) {
   if (value === null || value === undefined || value === '') return null;
   const domain = DOMAINS[FIELD_DOMAIN[field]];
   if (!domain) return value;
   return domain[value] ?? value;
 }
-
-const COLORS = ['#4fc3f7','#43e09b','#ff9f43','#f368e0','#ffd32a','#ff6b6b','#a55eea','#00cec9'];
 
 // ── Leaflet ──────────────────────────────────────────────────────────────────
 const map = L.map('map',{center:[47.6062,-122.3321],zoom:13});
@@ -365,20 +328,17 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/
   attribution: 'Esri World Imagery'
 }).addTo(map);
 
-let layerGroups  = {};                // SL-filtered layers (loaded eagerly)
-let layerGroupsAll = {};              // date-only filtered layers (loaded lazily for overlay modes)
-let layerGeomTypes = {};              // def.id → geomType, cached to avoid re-fetching
-let activePeriod = 'ServiceLevel';
-let displayMode  = 'sl';             // 'sl' | 'trolley' | 'row'
-let modeChanging = false;
+let layerGroups    = {};
+let layerGroupsAll = {};
+let layerGeomTypes = {};
+let activePeriod   = 'ServiceLevel';
+let displayMode    = 'sl';
+let modeChanging   = false;
 
-// Data stores — two sets, one per dataset
-const allFeatureProps     = [];      // SL-filtered: for period legend recount
-const allGeoJSONFeatures  = [];      // SL-filtered: (unused post-overlay refactor, kept for compat)
-const allFeaturePropsAll  = [];      // date-only filtered: for overlay legends
-const allGeoJSONFeaturesAll = [];    // date-only filtered: for trolley zoom extent
+const allFeatureProps      = [];
+const allFeaturePropsAll   = [];
+const allGeoJSONFeaturesAll = [];
 
-// Stored during init() for lazy overlay loading
 let _spatialDefsGlobal   = [];
 let _dateFilterAllGlobal = '';
 let overlayLayersLoaded  = false;
@@ -399,23 +359,23 @@ function featureColorForPeriod(props) {
 const MUTED = { color:'#252d3d', weight:1, opacity:0.22, fillOpacity:0 };
 
 const TROLLEY_STYLE = {
-  1: { color:'#00CFFF', weight:3,   opacity:0.95, fillOpacity:0 }, // Yes — active wire
-  2: { color:'#3A7CA5', weight:2.5, opacity:0.80, fillOpacity:0 }, // Yes — no scheduled svc
-  3: { color:'#FFAA00', weight:2.5, opacity:0.85, fillOpacity:0 }, // Under construction
-  4: { color:'#5588AA', weight:2,   opacity:0.65, fillOpacity:0 }, // Planned
+  1: { color:'#00CFFF', weight:3,   opacity:0.95, fillOpacity:0 },
+  2: { color:'#3A7CA5', weight:2.5, opacity:0.80, fillOpacity:0 },
+  3: { color:'#FFAA00', weight:2.5, opacity:0.85, fillOpacity:0 },
+  4: { color:'#5588AA', weight:2,   opacity:0.65, fillOpacity:0 },
 };
 
 const ROW_STYLE = {
-  2: { color:'#FFD700', weight:3, opacity:0.90, fillOpacity:0 }, // Time Restricted BAT
-  3: { color:'#FF8C00', weight:3, opacity:0.90, fillOpacity:0 }, // Managed Lane
-  4: { color:'#00CC66', weight:3, opacity:0.90, fillOpacity:0 }, // All-day Transit-Only
-  5: { color:'#00AAAA', weight:3, opacity:0.90, fillOpacity:0 }, // FAB Lane
-  6: { color:'#00FFCC', weight:3, opacity:0.90, fillOpacity:0 }, // Dedicated Transit Only
-  7: { color:'#CC88FF', weight:3, opacity:0.90, fillOpacity:0 }, // Grade-Separated Rail
-  9: { color:'#FF6600', weight:3, opacity:0.90, fillOpacity:0 }, // Under Construction
+  2: { color:'#FFD700', weight:3, opacity:0.90, fillOpacity:0 },
+  3: { color:'#FF8C00', weight:3, opacity:0.90, fillOpacity:0 },
+  4: { color:'#00CC66', weight:3, opacity:0.90, fillOpacity:0 },
+  5: { color:'#00AAAA', weight:3, opacity:0.90, fillOpacity:0 },
+  6: { color:'#00FFCC', weight:3, opacity:0.90, fillOpacity:0 },
+  7: { color:'#CC88FF', weight:3, opacity:0.90, fillOpacity:0 },
+  9: { color:'#FF6600', weight:3, opacity:0.90, fillOpacity:0 },
 };
 
-// ── Single source of truth for feature style ──────────────────────────────────
+// ── Style helpers ─────────────────────────────────────────────────────────────
 function getFeatureStyle(props) {
   if (displayMode === 'trolley') return TROLLEY_STYLE[props?.Electrified]  ?? MUTED;
   if (displayMode === 'row')     return ROW_STYLE[props?.TransitROW]       ?? MUTED;
@@ -423,7 +383,12 @@ function getFeatureStyle(props) {
   return { color:c, weight:2, opacity:0.9, fillColor:c, fillOpacity:0.2, offset:0.8 };
 }
 
-// Styles whichever layer set is currently active
+// Returns true when a feature is muted in the current overlay mode —
+// used to suppress click and mouseover on irrelevant segments
+function isHidden(props) {
+  return getFeatureStyle(props) === MUTED;
+}
+
 function refreshBaseStyle() {
   const groups = displayMode === 'sl' ? layerGroups : layerGroupsAll;
   Object.values(groups).forEach(group => {
@@ -431,8 +396,7 @@ function refreshBaseStyle() {
   });
 }
 
-// ── Lazy overlay layer loader ─────────────────────────────────────────────────
-// Fetches all date-valid segments without ServiceLevel exclusion
+// ── Lazy overlay loader ───────────────────────────────────────────────────────
 async function loadOverlayLayers() {
   if (overlayLayersLoaded) return;
   for (let i = 0; i < _spatialDefsGlobal.length; i++) {
@@ -454,12 +418,12 @@ async function loadOverlayLayers() {
           });
         },
         onEachFeature: (feature, lyr) => {
-          lyr.on('click', () => showInfoPanel(def.name, feature.properties || {}));
-          lyr.on('mouseover', function() { this.setStyle({weight:5, opacity:1}); });
+          lyr.on('click',     () => { if (!isHidden(feature.properties)) showInfoPanel(def.name, feature.properties || {}); });
+          lyr.on('mouseover', function() { if (!isHidden(feature.properties)) this.setStyle({weight:5, opacity:1}); });
           lyr.on('mouseout',  function() { this.setStyle(getFeatureStyle(feature.properties)); });
         }
       });
-      layerGroupsAll[def.id] = group; // not added to map yet
+      layerGroupsAll[def.id] = group;
     } catch(err) {
       console.error(`Overlay layer "${def.name}" failed:`, err);
     }
@@ -477,7 +441,6 @@ async function setDisplayMode(mode) {
       b.classList.toggle('active', b.dataset.mode === mode);
     });
     $('periodSwitcher').style.display = mode === 'sl' ? 'flex' : 'none';
-
     if (mode === 'sl') {
       Object.values(layerGroupsAll).forEach(g => { try { map.removeLayer(g); } catch(e){} });
       Object.values(layerGroups).forEach(g => { try { g.addTo(map); } catch(e){} });
@@ -485,10 +448,7 @@ async function setDisplayMode(mode) {
       buildLegend();
     } else {
       Object.values(layerGroups).forEach(g => { try { map.removeLayer(g); } catch(e){} });
-      if (!overlayLayersLoaded) {
-        await loadOverlayLayers();
-        setLoader(false);
-      }
+      if (!overlayLayersLoaded) { await loadOverlayLayers(); setLoader(false); }
       Object.values(layerGroupsAll).forEach(g => { try { g.addTo(map); } catch(e){} });
       refreshBaseStyle();
       buildLegend();
@@ -500,9 +460,7 @@ async function setDisplayMode(mode) {
         }
       }
     }
-  } finally {
-    modeChanging = false;
-  }
+  } finally { modeChanging = false; }
 }
 
 // ── UI helpers ───────────────────────────────────────────────────────────────
@@ -580,15 +538,6 @@ function renderRows(attrs) {
     .join('');
 
   return out;
-}
-
-function argbToCss(val) {
-  if (val == null) return null;
-  if (typeof val === 'string') return val; // already CSS
-  const r = (val >> 16) & 0xff;
-  const g = (val >> 8)  & 0xff;
-  const b =  val        & 0xff;
-  return `rgb(${r},${g},${b})`;
 }
 
 function showInfoPanel(layerName, props) {
@@ -680,12 +629,6 @@ async function fetchAll(layerId, where) {
   return all;
 }
 
-async function fetchCount(layerId, where='1=1') {
-  const p = new URLSearchParams({ where, returnCountOnly:'true', f:'json' });
-  const d = await (await fetch(`${BASE}/${layerId}/query?${p}`)).json();
-  return d.count ?? 0;
-}
-
 function toGeoJSON(feature, geomType) {
   if (!feature.geometry) return null;
   const g = feature.geometry;
@@ -704,48 +647,32 @@ const slCounts = {}; // ServiceLevel → count of features
 function buildLegend(slCounts_override) {
   const container = $('legendList');
   container.innerHTML = '';
-
   if (displayMode === 'trolley') {
-    // Only show values present in the broader dataset
     const present = new Set(allFeaturePropsAll.map(p => p.Electrified).filter(v => v != null && Number(v) !== 0));
     [[1,'#00CFFF'],[2,'#3A7CA5'],[3,'#FFAA00'],[4,'#5588AA']].forEach(([code, color]) => {
       if (!present.has(code) && !present.has(String(code))) return;
-      const label = DOMAINS.TrolleyWire[code] ?? String(code);
-      const item = document.createElement('div');
-      item.className = 'legend-item';
-      item.innerHTML = `<div class="legend-swatch" style="background:${color}"></div><div class="legend-label">${label}</div>`;
+      const item = document.createElement('div'); item.className = 'legend-item';
+      item.innerHTML = `<div class="legend-swatch" style="background:${color}"></div><div class="legend-label">${DOMAINS.TrolleyWire[code] ?? code}</div>`;
       container.appendChild(item);
     });
     return;
   }
-
   if (displayMode === 'row') {
     const present = new Set(allFeaturePropsAll.map(p => p.TransitROW).filter(v => v != null && Number(v) !== 1));
     [[2,'#FFD700'],[3,'#FF8C00'],[4,'#00CC66'],[5,'#00AAAA'],[6,'#00FFCC'],[7,'#CC88FF'],[9,'#FF6600']].forEach(([code, color]) => {
       if (!present.has(code) && !present.has(String(code))) return;
-      const label = DOMAINS.TransitROW[code] ?? String(code);
-      const item = document.createElement('div');
-      item.className = 'legend-item';
-      item.innerHTML = `<div class="legend-swatch" style="background:${color}"></div><div class="legend-label">${label}</div>`;
+      const item = document.createElement('div'); item.className = 'legend-item';
+      item.innerHTML = `<div class="legend-swatch" style="background:${color}"></div><div class="legend-label">${DOMAINS.TransitROW[code] ?? code}</div>`;
       container.appendChild(item);
     });
     return;
   }
-
-  // Service Level mode
   const counts = slCounts_override ?? slCounts;
   SL_DRAW_ORDER_LEGEND.forEach(code => {
-    const count = counts[code];
-    if (!count) return;
-    const src = SL_COLOR_MAP[code] ?? SL_META[code];
-    if (!src) return;
-    const label = decodeDomain('ServiceLevel', code) ?? String(code);
-    const item = document.createElement('div');
-    item.className = 'legend-item';
-    item.innerHTML = `
-      <div class="legend-swatch" style="background:${src.bg}"></div>
-      <div class="legend-label">${label}</div>
-      <div class="legend-count">${count.toLocaleString()}</div>`;
+    const count = counts[code]; if (!count) return;
+    const src = SL_COLOR_MAP[code] ?? SL_META[code]; if (!src) return;
+    const item = document.createElement('div'); item.className = 'legend-item';
+    item.innerHTML = `<div class="legend-swatch" style="background:${src.bg}"></div><div class="legend-label">${decodeDomain('ServiceLevel', code) ?? code}</div><div class="legend-count">${count.toLocaleString()}</div>`;
     container.appendChild(item);
   });
 }
@@ -753,9 +680,7 @@ function buildLegend(slCounts_override) {
 // ── Period switcher ───────────────────────────────────────────────────────────
 function switchPeriod(field) {
   activePeriod = field;
-  document.querySelectorAll('.period-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.period === field);
-  });
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === field));
   refreshBaseStyle();
   const counts = {};
   allFeatureProps.forEach(props => {
@@ -765,7 +690,7 @@ function switchPeriod(field) {
   buildLegend(counts);
 }
 
-// ── Transit table lookup (populated after routes load) ───────────────────────
+// ── Transit table lookup ──────────────────────────────────────────────────────
 let transitLookup = {};
 let SL_COLOR_MAP  = {};
 let routeLookup   = {};
@@ -793,14 +718,10 @@ async function init() {
     const routeLayers   = (meta.layers||[]).filter(l => isRoute(l.name));
     const transitTables   = (meta.tables||[]).filter(l => /transit_table$/i.test(l.name));
     const routeAttrTables = (meta.tables||[]).filter(l => /routeatt/i.test(l.name));
-    console.log('[route_attr] tables found:', routeAttrTables.map(l=>l.name));
 
     if (!routeLayers.length) throw new Error('No Route layers found. Available: ' + (meta.layers||[]).map(l=>l.name).join(', '));
 
-    const spatialDefs = [...routeLayers].reverse().map((l,i) => ({
-      ...l, color:COLORS[i % COLORS.length],
-      badges:[{cls:'route',label:'ROUTE'}]
-    }));
+    const spatialDefs = [...routeLayers].reverse().map(l => ({ ...l }));
 
 
 
@@ -817,7 +738,7 @@ async function init() {
       `(EndDate IS NULL OR EndDate >= DATE '${todayStr}') AND ` +
       `ServiceLevel NOT IN (298, 299, 998, 999)`;
 
-    // Store for lazy overlay loading (date-only, no ServiceLevel exclusion)
+    // Store for lazy overlay loading — date only, no ServiceLevel exclusion
     _spatialDefsGlobal   = spatialDefs;
     _dateFilterAllGlobal =
       `(Segment_StartDate IS NULL OR Segment_StartDate <= DATE '${todayStr}') AND ` +
@@ -857,22 +778,14 @@ async function init() {
           }
         }
 
-        // Cache geomType for reuse by loadOverlayLayers
+        // Cache for reuse by loadOverlayLayers
         layerGeomTypes[def.id] = geomType;
 
-        function featureColor(props) {
-          return featureColorForPeriod(props);
-        }
-
-        const [totalCnt, features] = await Promise.all([
-          fetchCount(def.id),
-          fetchAll(def.id, dateFilter)
-        ]);
+        const features = await fetchAll(def.id, dateFilter);
 
         const cntEl = $(`cnt-${def.id}`);
         if (cntEl) cntEl.textContent = features.length.toLocaleString();
 
-        // Store props for period legend recount; GeoJSON for compat
         const geojsonFeatures = features.map(f => toGeoJSON(f, geomType)).filter(Boolean);
         features.forEach(f => {
           const gid = f.attributes?.GeoID ?? f.attributes?.geoid ?? f.attributes?.GEOID;
@@ -881,11 +794,10 @@ async function init() {
           const sl = normalizeSL(f.attributes?.ServiceLevel);
           if (sl != null) slCounts[sl] = (slCounts[sl] ?? 0) + 1;
         });
-        geojsonFeatures.forEach(f => allGeoJSONFeatures.push(f));
 
         const group = L.geoJSON({ type:'FeatureCollection', features:geojsonFeatures }, {
           style: feature => {
-            const c = featureColor(feature.properties);
+            const c = featureColorForPeriod(feature.properties);
             return { color:c, weight:2, opacity:0.9, fillColor:c, fillOpacity:0.2, offset:0.8 };
           },
           pointToLayer: (feature, latlng) => {
@@ -895,8 +807,8 @@ async function init() {
             });
           },
           onEachFeature: (feature, lyr) => {
-            lyr.on('click', () => showInfoPanel(def.name, feature.properties || {}));
-            lyr.on('mouseover', function() { this.setStyle({weight:4, opacity:1}); });
+            lyr.on('click',     () => { if (!isHidden(feature.properties)) showInfoPanel(def.name, feature.properties || {}); });
+            lyr.on('mouseover', function() { if (!isHidden(feature.properties)) this.setStyle({weight:4, opacity:1}); });
             lyr.on('mouseout',  function() { this.setStyle(getFeatureStyle(feature.properties)); });
           }
         });
@@ -918,14 +830,12 @@ async function init() {
 
       try {
         const rawRows = await fetchAll(tbl.id, tableFilter);
-        console.log(`[transit_table] Stage 1 (date filtered): ${rawRows.length} records`);
 
         // Stage 2 — in-memory filter to only GeoIDs present in loaded routes
         const filtered = rawRows.filter(f => {
           const gid = f.attributes?.GeoID ?? f.attributes?.geoid ?? f.attributes?.GEOID;
           return gid != null && routeGeoIDs.has(gid);
         });
-        console.log(`[transit_table] Stage 2 (GeoID match): ${filtered.length} records`);
 
         // Build lookup: GeoID → [rows]
         filtered.forEach(f => {
@@ -936,9 +846,6 @@ async function init() {
           transitLookup[gid].push(a);
         });
 
-        console.log(`[transit_table] lookup built for ${Object.keys(transitLookup).length} unique GeoIDs`);
-        const sampleRow = filtered[0]?.attributes;
-        if (sampleRow) console.log('[transit_table] sample row fields:', Object.keys(sampleRow), '| Agency value:', sampleRow.Agency ?? sampleRow.agency ?? 'MISSING');
 
       } catch(err) {
         console.error('Transit_Table failed:', err);
@@ -961,9 +868,6 @@ async function init() {
           if (RtAttrKey == null) return;
           routeLookup[RtAttrKey] = { agency, short, Color_RouteBadge, Color_RouteText};
         });
-        console.log(`[route_attr] lookup built for ${Object.keys(routeLookup).length} routes`);
-        const sampleKey = Object.keys(routeLookup)[0];
-        console.log('[route_attr] sample key:', sampleKey, '| value:', routeLookup[sampleKey]);
       } catch(err) {
         console.error('RouteAttribute table failed:', err);
       }
