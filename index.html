@@ -322,7 +322,8 @@ const DOMAINS = {
     5:'Freight and Bus (FAB) Lane',
     6:'Dedicated Transit Only Lane (Busway / At-Grade Rail)',
     7:'Grade-Separated Light Rail',
-    9:'Transit Priority Lane Under Construction'
+    9:'Bus Lane Under Construction',
+   10:'Bus Lane Planned',
   },
   YesNo:   { 0:'No', 1:'Yes' },
   ServiceType: {
@@ -474,6 +475,7 @@ const ROW_STYLE = {
   6: { color:'#00FFCC', weight:3, opacity:0.90, fillOpacity:0 },
   7: { color:'#CC88FF', weight:3, opacity:0.90, fillOpacity:0 },
   9: { color:'#FF6600', weight:3, opacity:0.90, fillOpacity:0 },
+ 10: { color:'#FF6600', weight:3, opacity:0.90, fillOpacity:0 },
 };
 
 // ── Style helpers ─────────────────────────────────────────────────────────────
@@ -828,7 +830,7 @@ function toGeoJSON(feature, geomType) {
 const DRAW_ORDER = {
 	SL: [100, 105, 104, 107, 108, 109, 116, 199, 998],
 	TROLLEY: [1, 2, 3, 4, 0],
-	BUSLANE: [7, 6, 5, 4, 2, 3, 9, 1],
+	BUSLANE: [7, 6, 5, 4, 2, 3, 9, 10, 1],
 };
 const SL_DRAW_ORDER_LEGEND = DRAW_ORDER['SL'];
 const slCounts = {}; // ServiceLevel → count of features
