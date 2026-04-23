@@ -313,7 +313,7 @@ const DRAW_ORDER = {
 	      SL1:   [100, 105, 104, 106, 107, 206, 207, 108, 109, 110, 113, 116, 199, 998], // full list of SL code per Source Layer
        	  SL2:   [100, 105, 104, 107, 108, 109, 116, 199, 998], // Compressed list of SL for color and legend only
 	  TROLLEY:   [1, 2, 3, 4, 0],
-	  BUSLANE:   [7, 6, 5, 4, 2, 3, 9, 1],
+	  BUSLANE:   [7, 6, 5, 4, 2, 3, 9,10, 1],
 };
 const SL1_DRAW_ORDER = DRAW_ORDER['SL1'];
 const SL2_DRAW_ORDER = DRAW_ORDER['SL2'];
@@ -600,7 +600,7 @@ require([
   }
 
   // Trolleybus Network: Symbolize on Electrified field
-  function buildTrolleyRenderer() {
+  function buildTrolleyRenderer(offset) {
     const TROLLEY_COLORS = {
       0: '#666666',  // Inactive
       1: '#FFD700',  // Active
@@ -611,14 +611,14 @@ require([
 
     return new UniqueValueRenderer({
       field: 'Electrified',
-      defaultSymbol: { type: 'simple-line', color: [100,100,100,180], width: 2 },
+      defaultSymbol: { type: 'simple-line', color: [100,100,100,180], width: 1.6},
       uniqueValueInfos: Object.entries(TROLLEY_COLORS).map(([val, color]) => ({
         value: String(val),
         label: DOMAINS.TrolleyWire[val] || String(val),
         symbol: {
           type: 'simple-line',
           color: color,
-          width: 2,
+          width: 1.6,
           cap: 'round',
           join: 'round'
         }
@@ -627,7 +627,7 @@ require([
   }
 
   // Transit Right-of-Way: Symbolize on TransitROW field
-  function buildROWRenderer() {
+  function buildROWRenderer(offset) {
     const ROW_COLORS = {
       1: '#888888',  // None
       2: '#56B4E9',  // Time Restricted Bus-only
@@ -636,19 +636,20 @@ require([
       5: '#F0E442',  // Freight and Bus
       6: '#0072B2',  // Dedicated Transit Only
       7: '#D55E00',  // Grade-Separated Light Rail
-      9: '#CC79A7'   // Under Construction
+      9: '#CC79A7',  // Bus Lane Under Construction
+	 10: '#CC79A7'  // Bus Lane Planned
     };
 
     return new UniqueValueRenderer({
       field: 'TransitROW',
-      defaultSymbol: { type: 'simple-line', color: [100,100,100,180], width: 2 },
+      defaultSymbol: { type: 'simple-line', color: [100,100,100,180], width: 1.6},
       uniqueValueInfos: Object.entries(ROW_COLORS).map(([val, color]) => ({
         value: String(val),
         label: DOMAINS.TransitROW[val] || String(val),
         symbol: {
           type: 'simple-line',
           color: color,
-          width: 2,
+          width: 1.6,
           cap: 'round',
           join: 'round'
         }
@@ -764,11 +765,11 @@ require([
         applySLOrderBy(mainLayer, activePeriod);
         break;
       case 'trolley':
-        mainLayer.renderer = buildTrolleyRenderer();
+        mainLayer.renderer = buildTrolleyRenderer(-0.85);
         clearOrderBy(mainLayer);
         break;
       case 'row':
-        mainLayer.renderer = buildROWRenderer();
+        mainLayer.renderer = buildROWRenderer(-0.85);
         clearOrderBy(mainLayer);
         break;
     }
