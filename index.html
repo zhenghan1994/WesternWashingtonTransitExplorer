@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Western Washington Transit Explorer (Beta version)</title>
+<title>Puget Sound Transit Explorer (Beta version)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
@@ -48,25 +48,28 @@
   .info-panel.visible{display:flex}
   .info-header{
     padding:8px 12px;
+    padding-right:32px; /* space for close button */
     border-bottom:1px solid var(--border);
-    display:grid;
-    grid-template-columns:28px 1fr 28px;
-    align-items:center;
+    position:relative;
     flex-shrink:0;
   }
   .info-header h3{
     font-family:var(--mono);font-size:10px;color:var(--accent);
-    letter-spacing:.05em;text-align:center;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    letter-spacing:.05em;text-align:left;
+    overflow:hidden;text-overflow:ellipsis;
+    line-height:1.4;
+    max-height:2.8em; /* ~2 lines */
   }
   .close-info,.back-btn{
     background:none;border:none;color:var(--muted);
-    cursor:pointer;font-size:14px;padding:2px;
+    cursor:pointer;font-size:14px;padding:6px;
     display:flex;align-items:center;justify-content:center;
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
   }
-  .back-btn{display:none}  /* hidden on desktop */
-  .close-info{justify-self:end}
-  .back-btn{justify-self:start}
+  .back-btn{display:none;left:4px}  /* hidden on desktop */
+  .close-info{right:4px}
   .close-info:hover,.back-btn:hover{color:var(--text)}
   .info-body{overflow-y:auto;padding:10px 14px}
   .info-section-title{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border)}
@@ -131,7 +134,9 @@
     /* Hide sidebar when info panel is shown on mobile */
     .sidebar.hidden-mobile{display:none}
     /* Back button visible only on mobile — desktop keeps it hidden */
-    .back-btn{display:flex;visibility:visible}
+    .back-btn{display:flex;visibility:visible;left:8px;right:auto}
+    /* Adjust title padding on mobile to accommodate back button on left */
+    .info-header h3{padding-left:24px;padding-right:24px}
 
     /* Legend: two-column grid so all items are visible without scrolling.
        Each column is at least 140px wide; the grid fills available width.
@@ -192,7 +197,7 @@
 <body>
 
 <header>
-  <span class="wordmark">Western Washington Transit Explorer</span>
+  <span class="wordmark">Puget Sound Transit Explorer</span>
   <div class="divider"></div>
   <span class="feed-label"></span>
   <span class="sdk-badge">ArcGIS JS SDK 4.30</span>
@@ -244,34 +249,46 @@
 <div id="agency-tooltip"></div>
 
 <script>
+
+
 // ── Shared data constants (identical to Leaflet version) ──────────────────────
 
-const BASE = 'https://services7.arcgis.com/m6uLpqj7MgjPU371/arcgis/rest/services/Seattle_CSA_Transit_Network/FeatureServer';
+const BASE = 'https://services7.arcgis.com/m6uLpqj7MgjPU371/arcgis/rest/services/Western_Washington_Transit_Network/FeatureServer';
 
 const SL_META = {
   100: { cat:'Rail infrastructure',  bg:'#FFE566', text:'#3D3000' },
-  104: { cat:'High frequency',       bg:'#56B4E9', text:'#0A2D42' },
   105: { cat:'High frequency',       bg:'#FF5FA3', text:'#4D0D28' },
-  106: { cat:'High frequency',       bg:'#88CCAA', text:'#1A3D2C' },
-  107: { cat:'Partial frequency',    bg:'#6AAA8C', text:'#3D2800' },
+  104: { cat:'High frequency',       bg:'#56B4E9', text:'#0A2D42' },
+  106: { cat:'High frequency',       bg:'#56B4E9', text:'#0A2D42' },
+  107: { cat:'Partial frequency',    bg:'#8BAA8C', text:'#3D2800' },
+  206: { cat:'Partial frequency',    bg:'#8BAA8C', text:'#3D2800' },
+  207: { cat:'Partial frequency',    bg:'#8BAA8C', text:'#3D2800' },
   108: { cat:'Regular',              bg:'#CC7722', text:'#3A1E00' },
-  109: { cat:'Regular',              bg:'#994422', text:'#301200' },
-  116: { cat:'Limited / special',    bg:'#773388', text:'#250D2C' },
+  109: { cat:'Limited',              bg:'#994422', text:'#301200' },
+  110: { cat:'Limited',              bg:'#994422', text:'#301200' },
+  113: { cat:'Limited',              bg:'#994422', text:'#301200' },
+  116: { cat:'Peak Only',            bg:'#773388', text:'#250D2C' },
   199: { cat:'Demand-responsive',    bg:'#9977CC', text:'#241545' },
+  295: { cat:'No Regular Service',   bg:'#B2B2B2', text:'#250D2C' },
+  299: { cat:'No Regular Service',   bg:'#B2B2B2', text:'#250D2C' },
+  998: { cat:'No Regular Service',   bg:'#B2B2B2', text:'#250D2C' },
+  999: { cat:'No Regular Service',   bg:'#B2B2B2', text:'#250D2C' },
 };
 
 const DOMAINS = {
   ServiceLevel_v2: {
     100:'Light Rail', 105:'Very Frequent (≤10 min)', 104:'Frequent (10-15 min)',
     106:'Frequent (15 min)', 107:'Partial Frequent (15-30 min)', 108:'Regular (30 min)',
-    109:'Regular (>30 min)', 116:'Peak Only', 199:'Dial-A-Ride Transit (DART)'
+    109:'Regular (>30 min)', 206:'Less Frequent (20 min)',207:'Regular (20-30 min)',
+	113:'Limited (>60 min)', 116:'Peak Only', 199:'Dial-A-Ride Transit (DART)',
+	299:"Snow Route Only", 998:'No Regular Service'
   },
   TrolleyWire: { 0:'Inactive', 1:'Active', 2:'Active - No scheduled service', 3:'Under Construction', 4:'Planned' },
   TransitROW: {
     1:'None', 2:'Time Restricted Bus-only / BAT Lane', 3:'Managed Lane (HOV or Toll Lane)',
     4:'All-day Transit-Only / BAT Lane', 5:'Freight and Bus (FAB) Lane',
     6:'Dedicated Transit Only Lane (Busway / At-Grade Rail)', 7:'Grade-Separated Light Rail',
-    9:'Transit Priority Lane Under Construction'
+    9:'Bus Lane Under Construction',10:'Bus Lane Planned'
   },
   Agency: {
     ST:'Sound Transit', KM:'King County Metro', CT:'Community Transit', PT:'Pierce Transit',
@@ -291,13 +308,23 @@ const AGENCY_COLORS = {
   ET: {bg:'#E87722',text:'#fff'}, SkT:{bg:'#4C9B3F',text:'#fff'}, OT: {bg:'#7B5EA7',text:'#fff'},
 };
 
-const SL_DRAW_ORDER = [100, 105, 104, 106, 107, 108, 109, 116, 199];
+
+const DRAW_ORDER = {
+	      SL1:   [100, 105, 104, 106, 107, 206, 207, 108, 109, 110, 113, 116, 199, 295, 299, 998, 999], // full list of SL code per Source Layer
+       	  SL2:   [100, 105, 104, 107, 108, 109, 116, 199, 998], // Compressed list of SL for color and legend only
+	  TROLLEY:   [1, 2, 3, 4, 0],
+	  BUSLANE:   [7, 6, 5, 4, 2, 3, 9,10, 1],
+};
+const SL1_DRAW_ORDER = DRAW_ORDER['SL1'];
+const SL2_DRAW_ORDER = DRAW_ORDER['SL2'];
 
 function normalizeSL(val) {
   if (val == null) return val;
   const v = Number(val);
-  if (v === 207 || v === 206) return 107;
-  if (v === 113 || v === 110) return 109;
+  if (v === 106) return 104; // → Frequent (10-15 min)
+  if (v === 207 || v === 206) return 107; // → Regular (15-30 min)
+  if (v === 113 || v === 110) return 109; // → Regular (>30 min)
+  if (v === 998 || v === 999 || v === 299 || v === 295) return 998; //  → No Regular Service
   return v;
 }
 
@@ -318,7 +345,8 @@ function getTodayStr() {
 function DEF_EXPR_DATE(startField, endField) {
   const t = getTodayStr();
   return `(${startField} IS NULL OR ${startField} <= DATE '${t}') AND ` +
-         `(${endField}   IS NULL OR ${endField}   >= DATE '${t}')`;
+         `(${endField}   IS NULL OR ${endField}   >= DATE '${t}') AND ` +
+		 `(SERVICELEVEL <> 999)`;
 }
 
 // ── Midnight refresh ───────────────────────────────────────────────────────────
@@ -364,7 +392,7 @@ function slBarSeg(period, val) {
   const src  = SL_META[nval];
   const bg   = src ? src.bg   : 'rgba(100,160,255,0.08)';
   const col  = src ? src.text : 'var(--muted)';
-  const label = nval != null ? (DOMAINS.ServiceLevel_v2[nval] ?? '—') : '—';
+  const label = val != null ? (DOMAINS.ServiceLevel_v2[val] ?? '—') : '—';
   return `<div class="sl-bar-seg" style="background:${bg};color:${col}">
     <span class="sl-bar-period">${period}</span>
     <span class="sl-bar-label">${label}</span>
@@ -391,8 +419,11 @@ function renderAttrs(attrs) {
 }
 
 function showInfoPanel(gid, segmentName, attrs, transitRows, routeLookup) {
-  const titleBase = gid != null ? `ID: ${gid}` : 'ID: —';
-  $('infoPanelTitle').textContent = segmentName ? `${titleBase} — ${segmentName}` : titleBase;
+  // Format: "Segment {gid} - {SegmentName}" or just "Segment {gid}"
+  let title = gid != null ? `Segment ${gid}` : 'Segment —';
+  if (segmentName) title += ` - ${segmentName}`;
+  $('infoPanelTitle').textContent = title;
+  
   let html = renderAttrs(attrs);
 
   if (transitRows == null) {
@@ -459,14 +490,14 @@ function buildLegend(mode) {
     return;
   }
   if (mode === 'row') {
-    [[2,'#FFD700'],[3,'#FF8C00'],[4,'#00CC66'],[5,'#00AAAA'],[6,'#00FFCC'],[7,'#CC88FF'],[9,'#FF6600']].forEach(([code,c]) => {
+    [[7,'#CC88FF'],[6,'#00FFCC'],[5,'#00AAAA'],[4,'#00CC66'],[2,'#FFD700'],[3,'#FF8C00'],[9,'#FF6600'],[10,'#FF6600']].forEach(([code,c]) => {
       const d = document.createElement('div'); d.className = 'legend-item';
       d.innerHTML = `<div class="legend-swatch" style="background:${c}"></div><div class="legend-label">${DOMAINS.TransitROW[code] ?? code}</div>`;
       container.appendChild(d);
     });
     return;
   }
-  SL_DRAW_ORDER.forEach(code => {
+  SL2_DRAW_ORDER.forEach(code => {
     const src = SL_META[code]; if (!src) return;
     const d = document.createElement('div'); d.className = 'legend-item';
     d.innerHTML = `<div class="legend-swatch" style="background:${src.bg}"></div><div class="legend-label">${DOMAINS.ServiceLevel_v2[code] ?? code}</div>`;
@@ -479,24 +510,173 @@ require([
   "esri/Map",
   "esri/views/MapView",
   "esri/layers/FeatureLayer",
-  // ✦ ArcGIS: These three replace ALL of: featureColor(), featureColorForPeriod(),
-  //   getFeatureStyle(), TROLLEY_STYLE, ROW_STYLE, SL_COLOR_MAP, and refreshBaseStyle()
-  // ✦ ArcGIS: reactiveUtils for watching layer loading state
+  "esri/symbols/CIMSymbol",
+  "esri/renderers/UniqueValueRenderer",
+  "esri/renderers/SimpleRenderer",
   "esri/core/reactiveUtils"
 ], function(
   Map, MapView, FeatureLayer,
+  CIMSymbol, UniqueValueRenderer, SimpleRenderer,
   reactiveUtils
 ) {
 
-  // ── Layer configuration ────────────────────────────────────────────────────
-  // Each viewing mode is now a separately published layer with its own
-  // symbology (colors, weights, offsets) defined in AGOL. No client-side
-  // renderer building needed — the service renderers load and render directly.
-  const MODE_LAYERS = {
-    sl:      { id: 2, title: 'Service Level' },
-    trolley: { id: 0, title: 'Trolleybus Network' },
-    row:     { id: 3, title: 'Transit ROW' }
-  };
+  // ── Single layer configuration ─────────────────────────────────────────────
+  // One consolidated layer with all attributes. Mode switching is done by
+  // swapping renderers client-side rather than toggling layer visibility.
+  const LAYER_ID = 2;
+  let mainLayers = [];  // Array of layers instead of single layer
+  let layerViews = [];  // Array of layerViews for highlights
+
+  // ── Renderer builders ──────────────────────────────────────────────────────
+  // Each mode needs its own renderer. We build these client-side since the
+  // service only provides simple symbols (no CIM offset preservation).
+
+  // Service Level: CIM symbols with offset for visual separation
+  function buildSLCIMRenderer(field, offset) {
+    function makeCIMSym(hexColor, width, offsetPt) {
+      const [r, g, b] = [
+        parseInt(hexColor.slice(1,3), 16),
+        parseInt(hexColor.slice(3,5), 16),
+        parseInt(hexColor.slice(5,7), 16)
+      ];
+      return new CIMSymbol({
+        data: {
+          type: 'CIMSymbolReference',
+          symbol: {
+            type: 'CIMLineSymbol',
+            symbolLayers: [{
+              type: 'CIMSolidStroke',
+              width: width,
+              color: [r, g, b, 230],
+              capStyle: 'Round',
+              joinStyle: 'Round',
+              effects: [{
+                type: 'CIMGeometricEffectOffset',
+                offset: offsetPt,
+                method: 'Rounded',
+                option: 0
+              }]
+            }]
+          }
+        }
+      });
+    }
+
+    const defaultSym = makeCIMSym('#A0A0A0', 0.8, offset);
+
+    return new UniqueValueRenderer({
+      field: field,
+      defaultSymbol: defaultSym,
+      uniqueValueInfos: SL1_DRAW_ORDER.slice().reverse().map(code => ({
+        value: String(code),
+        label: DOMAINS.ServiceLevel_v2[code] || String(code),
+        symbol: makeCIMSym(SL_META[code].bg, 2, offset)
+      }))
+    });
+  }
+
+  // Trolleybus Network: Symbolize on Electrified field
+  function buildTrolleyRenderer(offset) {
+    const TROLLEY_COLORS = {
+      0: '#666666',  // Inactive
+      1: '#FFD700',  // Active
+      2: '#FFA500',  // Active - No scheduled service
+      3: '#FF6B6B',  // Under Construction
+      4: '#9B59B6'   // Planned
+    };
+	function makeTrolleyCIMSym(hexColor, width, offsetPt) {
+		const [r, g, b] = [
+		  parseInt(hexColor.slice(1,3), 16),
+		  parseInt(hexColor.slice(3,5), 16),
+		  parseInt(hexColor.slice(5,7), 16)
+		];
+		return new CIMSymbol({
+		  data: {
+			type: 'CIMSymbolReference',
+			symbol: {
+			  type: 'CIMLineSymbol',
+			  symbolLayers: [{
+				type: 'CIMSolidStroke',
+				width: width,
+				color: [r, g, b, 230],
+				capStyle: 'Round',
+				joinStyle: 'Round',
+				effects: [{
+				  type: 'CIMGeometricEffectOffset',
+				  offset: offsetPt,
+				  method: 'Rounded',
+				  option: 0
+				}]
+			  }]
+			}
+		  }
+		});
+	}
+
+    return new UniqueValueRenderer({
+    field: 'Electrified',
+    defaultSymbol: makeTrolleyCIMSym('#666666', 1.5, offset),
+    // Reverse array so first item in DRAW_ORDER.TROLLEY draws on top (last)
+    uniqueValueInfos: DRAW_ORDER.TROLLEY.slice().reverse().map(code => ({
+      value: String(code),
+      label: DOMAINS.TrolleyWire[code] || String(code),
+      symbol: makeTrolleyCIMSym(TROLLEY_COLORS[code], 1.8, offset)
+      }))
+    });
+  }
+
+  // Transit Right-of-Way: Symbolize on TransitROW field
+  function buildROWRenderer(offset) {
+	const ROW_COLORS = {
+	  1: '#888888',  // None
+	  2: '#56B4E9',  // Time Restricted Bus-only
+	  3: '#E69F00',  // Managed Lane (HOV/Toll)
+	  4: '#009E73',  // All-day Transit-Only
+	  5: '#F0E442',  // Freight and Bus
+	  6: '#0072B2',  // Dedicated Transit Only
+	  7: '#D55E00',  // Grade-Separated Light Rail
+	  9: '#CC79A7',  // Bus Lane Under Construction
+	 10: '#CC79A7'   // Bus Lane Planned
+	};
+	function makeROWCIMSym(hexColor, width, offsetPt) {
+		const [r, g, b] = [
+		  parseInt(hexColor.slice(1,3), 16),
+		  parseInt(hexColor.slice(3,5), 16),
+		  parseInt(hexColor.slice(5,7), 16)
+		];
+		return new CIMSymbol({
+		  data: {
+			type: 'CIMSymbolReference',
+			symbol: {
+			  type: 'CIMLineSymbol',
+			  symbolLayers: [{
+				type: 'CIMSolidStroke',
+				width: width,
+				color: [r, g, b, 230],
+				capStyle: 'Round',
+				joinStyle: 'Round',
+				effects: [{
+				  type: 'CIMGeometricEffectOffset',
+				  offset: offsetPt,
+				  method: 'Rounded',
+				  option: 0
+				}]
+			  }]
+			}
+		  }
+		});
+	  }
+		return new UniqueValueRenderer({
+		field: 'TransitROW',
+		defaultSymbol: makeROWCIMSym('#888888', 1.5, offset),
+		// Reverse array so first item in DRAW_ORDER.BUSLANE draws on top (last)
+		uniqueValueInfos: DRAW_ORDER.BUSLANE.slice().reverse().map(code => ({
+		  value: String(code),
+		  label: DOMAINS.TransitROW[code] || String(code),
+		  symbol: makeROWCIMSym(ROW_COLORS[code], 1.8, offset)
+		}))
+	  });
+	}
 
   // Highlight symbol used by view.hitTest hover
   const HIGHLIGHT_OPTIONS = { color: [255,255,255], fillOpacity: 0, haloOpacity: 0.9, haloColor: [255,255,255] };
@@ -504,9 +684,6 @@ require([
   // ── State ──────────────────────────────────────────────────────────────────
   let activePeriod  = 'ServiceLevel';
   let displayMode   = 'sl';
-  const modeLayers  = {};            // mode key ('sl'|'trolley'|'row') → FeatureLayer
-  let   featureLayers = [];          // flat array view of modeLayers for hitTest/highlight
-  let   layerViews  = new Map();     // FeatureLayer → FeatureLayerView
   let highlights    = [];           // active highlight handles
   let routeLookup   = {};           // Route_Bound → { agency, short, Color_RouteBadge, Color_RouteText }
   let transitLayer  = null;         // FeatureLayer for Transit_Table (no geometry, query-only)
@@ -531,51 +708,38 @@ require([
   // ✦ ArcGIS: view.hitTest() replaces onEachFeature mouseover/mouseout.
   //   One listener handles ALL layers at once — no per-feature wiring.
   view.on('pointer-move', async e => {
-    const result = await view.hitTest(e, { include: featureLayers });
+    if (!mainLayers.length || !layerViews.length) return;
+    const result = await view.hitTest(e, { include: mainLayers });
     highlights.forEach(h => h.remove());
     highlights = [];
     if (result.results.length) {
       const graphic = result.results[0].graphic;
-      const lv = layerViews.get(graphic.layer);
-      if (lv) highlights.push(lv.highlight(graphic));
+      const layer = graphic.layer;
+      const layerViewIndex = mainLayers.indexOf(layer);
+      if (layerViewIndex >= 0 && layerViews[layerViewIndex]) {
+        highlights.push(layerViews[layerViewIndex].highlight(graphic));
+      }
     }
   });
 
   // ── Click → info panel ─────────────────────────────────────────────────────
-  // ✦ ArcGIS: Same hitTest approach, but instead of fetching the transit table
-  //   on init (transitLookup), we query it lazily on demand per-click.
-  //   This is faster initial load and simpler than pre-loading everything.
   view.on('click', async e => {
-    const result = await view.hitTest(e, { include: featureLayers });
+    const result = await view.hitTest(e, { include: mainLayers });
     if (!result.results.length) return;
 
     const graphic    = result.results[0].graphic;
     const attrs      = graphic.attributes;
 
-    // Log all attribute keys on first click so the real field name is visible
-    // in the browser console — remove once field names are confirmed.
-    console.log('[hitTest attrs]', attrs);
-
-    // Try every known casing variation of the GeoID field.
-    // Check the console log above if gid is still null — the real field name
-    // will be visible there and can be added to this list.
-    const gid = attrs.GeoID  ?? attrs.Geo_ID   ?? attrs.geo_id  ??
-                attrs.geoid  ?? attrs.GEOID     ?? attrs.GEO_ID  ?? null;
+    const gid = attrs.GeoID ?? attrs.geoid ?? attrs.GEOID ?? null;
 
     const segmentName = attrs.SegmentName || attrs.Segment_Name || null;
 
     // Show panel immediately with route section as "loading"
     showInfoPanel(gid, segmentName, attrs, null, routeLookup);
 
-    // ✦ ArcGIS: createQuery() pre-populates the query with the layer's
-    //   definitionExpression (the date + ServiceLevel filter), then we AND
-    //   our GeoID condition on top. Using queryFeatures({ where: '...' })
-    //   directly would bypass the definitionExpression entirely.
+    // Query transit table for routes on this segment
     if (transitLayer && gid != null) {
       try {
-        // Build the query explicitly — never rely solely on createQuery() inheriting
-        // definitionExpression for an unrendered layer. The date clause is written
-        // here directly so the filter is guaranteed regardless of load state.
         const q = transitLayer.createQuery();
         const _t = getTodayStr();
         q.where = `GeoID = ${gid} AND ` +
@@ -600,11 +764,13 @@ require([
     if (!btn) return;
     activePeriod = btn.dataset.period;
     document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b === btn));
-    // ✦ ArcGIS: The service renderer is already perfect — we just point its
-    //   field1 at the chosen period. Direct mutation on the SDK-native renderer
-    //   triggers a re-render without any cloning or reconstruction.
-    const r = modeLayers.sl && modeLayers.sl.renderer;
-    if (r) r.field = activePeriod;
+    // Rebuild CIM renderer with new period field (only affects SL mode)
+    if (mainLayers.length && displayMode === 'sl') {
+	  mainLayers.forEach((layer, i) => {
+        const code = SL1_DRAW_ORDER[SL1_DRAW_ORDER.length - 1 - i];
+        layer.definitionExpression = `${DEF_EXPR_DATE('Segment_StartDate', 'Segment_EndDate')} AND ${activePeriod} = ${code}`;
+      });
+    }
   });
 
   // ── Mode switcher ──────────────────────────────────────────────────────────
@@ -617,12 +783,99 @@ require([
 
     buildLegend(displayMode);
 
-    // ✦ ArcGIS: Mode switch is now purely visibility. Each layer's symbology
-    //   is baked into its own published service — no renderer manipulation,
-    //   no state to track, no cloning. The inactive layers simply stop drawing.
-    Object.entries(modeLayers).forEach(([mode, layer]) => {
-      layer.visible = (mode === displayMode);
-    });
+    // Rebuild layers based on mode
+	if (!mainLayers.length) return;
+		
+	// Remove existing layers
+	mainLayers.forEach(layer => map.remove(layer));
+	mainLayers = [];
+	layerViews = [];
+
+	switch(displayMode) {
+	  case 'sl':
+		// Create Service Level layers
+		mainLayers = SL1_DRAW_ORDER.slice().reverse().map(code => {
+		  return new FeatureLayer({
+			url: `${BASE}/${LAYER_ID}`,
+			title: `Transit SL ${code}`,
+			definitionExpression: `${DEF_EXPR_DATE('Segment_StartDate', 'Segment_EndDate')} AND ${activePeriod} = ${code}`,
+			outFields: ['*'],
+			popupEnabled: false,
+			renderer: new SimpleRenderer({
+			  symbol: (() => {
+				const hexColor = SL_META[code]?.bg || '#A0A0A0';
+				const width = SL_META[code] ? 2 : 0.8;
+				const [r, g, b] = [
+				  parseInt(hexColor.slice(1,3), 16),
+				  parseInt(hexColor.slice(3,5), 16),
+				  parseInt(hexColor.slice(5,7), 16)
+				];
+				return new CIMSymbol({
+				  data: {
+					type: 'CIMSymbolReference',
+					symbol: {
+					  type: 'CIMLineSymbol',
+					  symbolLayers: [{
+						type: 'CIMSolidStroke',
+						width: width,
+						color: [r, g, b, 230],
+						capStyle: 'Round',
+						joinStyle: 'Round',
+						effects: [{
+						  type: 'CIMGeometricEffectOffset',
+						  offset: -1.1,
+						  method: 'Rounded',
+						  option: 0
+						}]
+					  }]
+					}
+				  }
+				});
+			  })()
+			})
+		  });
+		});
+		break;
+		
+	  case 'trolley':
+		// Create Trolley layers
+		mainLayers = DRAW_ORDER.TROLLEY.slice().reverse().map(code => {
+		  return new FeatureLayer({
+			url: `${BASE}/${LAYER_ID}`,
+			title: `Trolley ${code}`,
+			definitionExpression: `${DEF_EXPR_DATE('Segment_StartDate', 'Segment_EndDate')} AND Electrified = ${code}`,
+			outFields: ['*'],
+			popupEnabled: false,
+			renderer: buildTrolleyRenderer(-1)  // This won't work - need single symbol
+		  });
+		});
+		break;
+		
+	  case 'row':
+		// Create ROW layers
+		mainLayers = DRAW_ORDER.BUSLANE.slice().reverse().map(code => {
+		  return new FeatureLayer({
+			url: `${BASE}/${LAYER_ID}`,
+			title: `ROW ${code}`,
+			definitionExpression: `${DEF_EXPR_DATE('Segment_StartDate', 'Segment_EndDate')} AND TransitROW = ${code}`,
+			outFields: ['*'],
+			popupEnabled: false,
+			renderer: buildROWRenderer(-1)  // This won't work - need single symbol
+		  });
+		});
+		break;
+	}
+
+	// Add new layers
+	mainLayers.forEach(layer => map.add(layer));
+
+	// Re-register layerViews
+	(async () => {
+	  for (const layer of mainLayers) {
+		const lv = await view.whenLayerView(layer);
+		layerViews.push(lv);
+	  }
+	})();
   });
 
   // ── Main init ──────────────────────────────────────────────────────────────
@@ -673,33 +926,62 @@ require([
         await transitLayer.load();
       }
 
-      // ── Create one FeatureLayer per viewing mode ──────────────────────────
-      // Each layer uses its own published service renderer (colors, weights,
-      // offsets all defined server-side). Only the SL layer starts visible.
-      Object.entries(MODE_LAYERS).forEach(([mode, cfg]) => {
-        modeLayers[mode] = new FeatureLayer({
-          url:                  `${BASE}/${cfg.id}`,
-          title:                cfg.title,
-          definitionExpression: DEF_EXPR_DATE('Segment_StartDate', 'Segment_EndDate'),
-          outFields:            ['*'],
-          popupEnabled:         false,
-          visible:              (mode === 'sl')
-        });
-      });
-      featureLayers = Object.values(modeLayers);
+      // ── Create single consolidated FeatureLayer ───────────────────────────────
+      // One layer with all attributes. Renderers are swapped client-side for
+      // different viewing modes rather than maintaining separate layers.
+      // Create separate layer for each service level (bottom to top)
+	  mainLayers = SL1_DRAW_ORDER.slice().reverse().map(code => {
+	    return new FeatureLayer({
+	  	  url: `${BASE}/${LAYER_ID}`,
+	  	  title: `Transit SL ${code}`,
+	  	  definitionExpression: `${DEF_EXPR_DATE('Segment_StartDate', 'Segment_EndDate')} AND ${activePeriod} = ${code}`,
+	  	  outFields: ['*'],
+	  	  popupEnabled: false,
+	  	  renderer: new SimpleRenderer({
+	  	    symbol: (() => {
+			  const hexColor = SL_META[code]?.bg || '#A0A0A0';
+			  const width = SL_META[code] ? 2 : 0.8;
+			  const [r, g, b] = [
+			    parseInt(hexColor.slice(1,3), 16),
+			    parseInt(hexColor.slice(3,5), 16),
+			    parseInt(hexColor.slice(5,7), 16)
+			  ];
+			  return new CIMSymbol({
+			    data: {
+				  type: 'CIMSymbolReference',
+				  symbol: {
+				    type: 'CIMLineSymbol',
+				    symbolLayers: [{
+					  type: 'CIMSolidStroke',
+					  width: width,
+					  color: [r, g, b, 230],
+					  capStyle: 'Round',
+					  joinStyle: 'Round',
+					  effects: [{
+					    type: 'CIMGeometricEffectOffset',
+					    offset: -1.2,
+					    method: 'Rounded',
+					    option: 0
+					  }]
+				    }]
+				  }
+			    }
+			  });
+		    })()
+		  })
+	    });
+	  });
 
-      map.addMany(featureLayers);
+	  // Add layers in order (first = bottom, last = top)
+	  mainLayers.forEach(layer => map.add(layer));
 
-      // Register LayerViews for highlight support on all three layers.
-      await Promise.all(
-        featureLayers.map(fl =>
-          view.whenLayerView(fl).then(lv => layerViews.set(fl, lv))
-        )
-      );
-
-      // ── Watch for all layers to finish loading ────────────────────────────
-      // ✦ ArcGIS: reactiveUtils.whenOnce() replaces manual setLoader/progress tracking.
-      //   In the Leaflet version this required a progress bar + manual percentage updates.
+      // Register all layerViews
+	  for (const layer of mainLayers) {
+        const lv = await view.whenLayerView(layer);
+        layerViews.push(lv);
+      }
+	  
+      // ── Watch for layer to finish loading ─────────────────────────────────────
       await reactiveUtils.whenOnce(() => !view.updating);
       setStatus('', 'Loaded');
       const dot = $('statusPill').querySelector('.dot');
@@ -707,10 +989,9 @@ require([
 
       buildLegend('sl');
 
-      // Start the midnight refresh cycle — passes getter functions so the
-      // scheduler always reads the live displayMode and layer references.
+      // Start the midnight refresh cycle
       scheduleMidnightRefresh(
-        () => featureLayers,
+        () => mainLayers,
         () => transitLayer
       );
 
