@@ -1,8 +1,22 @@
-# Seattle Transit Network Map
+# Puget Sound Transit Explorer
 
-An interactive web map visualizing the Western Washington transit network with multiple viewing modes, built with ArcGIS JS SDK and Leaflet.
+An interactive web map visualizing the Western Washington transit network with multiple viewing modes, built with ArcGIS JS SDK.
 
-![Seattle Transit Network](https://via.placeholder.com/800x400?text=Seattle+Transit+Network+Map)
+![Puget Sound Transit Explorer](https://via.placeholder.com/800x400?text=Puget+Sound+Transit+Explorer)
+
+## Implementation Note
+
+This project has two branches:
+- **`ArcGIS_JS_API`**: The production version using ArcGIS JS SDK 4.30 (connected to GitHub Pages)
+- **`leaflet`**: Alternative implementation using Leaflet.js
+
+**The ArcGIS JS SDK version was adopted** due to:
+- **Faster loading time**: Native FeatureLayer handles pagination and streaming automatically
+- **Better compatibility**: Direct integration with ArcGIS Online Feature Server without manual GeoJSON conversion
+- **CIM symbol support**: Advanced cartographic symbols with geometric offset effects
+- **Automatic projection handling**: SDK manages coordinate transformations internally
+
+The Leaflet branch remains available for reference and for scenarios requiring more granular control or offline-first capabilities.
 
 ## Features
 
@@ -50,10 +64,12 @@ An interactive web map visualizing the Western Washington transit network with m
 
 ## Data Source
 
-**ArcGIS Feature Service**:
+**ArcGIS Feature Service** (created and maintained by the project author):
 - Base URL: `https://services7.arcgis.com/m6uLpqj7MgjPU371/arcgis/rest/services/Western_Washington_Transit_Network/FeatureServer`
 - Main Layer: Layer 2 (transit network segments)
 - Transit Routes: Layer 4 (route attributes and agency information)
+
+The feature service aggregates and synthesizes transit data from multiple regional agencies including King County Metro, Sound Transit, Pierce Transit, Community Transit, and others. The data includes service level classifications, transit right-of-way types, trolleybus infrastructure, and temporal attributes for tracking network changes over time.
 
 ### Service Level Codes
 
@@ -88,29 +104,40 @@ An interactive web map visualizing the Western Washington transit network with m
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/seattle-transit-map.git
-cd seattle-transit-map
+git clone https://github.com/zhenghan1994/PugetSoundTransitExplorer.git
+cd PugetSoundTransitExplorer
 ```
 
-2. Deploy the HTML file:
-   - **GitHub Pages**: Push to `gh-pages` branch or enable Pages in Settings
-   - **Netlify**: Drag and drop the HTML file
+2. **Use the ArcGIS_JS_API branch** (recommended - connected to GitHub Pages):
+```bash
+git checkout ArcGIS_JS_API
+```
+
+   Or switch to the Leaflet version:
+```bash
+git checkout leaflet
+```
+
+3. Deploy the HTML file:
+   - **GitHub Pages**: Already configured to deploy from `ArcGIS_JS_API` branch
+   - **Netlify**: Drag and drop the HTML file or connect your GitHub repo
    - **Local**: Open `seattle-transit-arcgis.html` directly in a browser
 
 No build process or dependencies required — it's a single self-contained HTML file.
 
-### Choosing a Version
+### Branch Comparison
 
-- **ArcGIS Version** (`seattle-transit-arcgis.html`): 
-  - Recommended for most deployments
-  - Better performance with large datasets
-  - Native CIM symbol support
-  - Auto-handles projection and pagination
+| Feature | `ArcGIS_JS_API` | `leaflet` |
+|---------|----------------|-----------|
+| Initial load time | ~2-3 seconds | ~4-6 seconds |
+| Feature Server integration | Native | Manual REST queries |
+| Projection handling | Automatic | Manual GeoJSON conversion |
+| CIM symbols | ✓ | ✗ (uses simple Leaflet paths) |
+| Offline after load | Partial | Full (pre-loads all data) |
+| File size | ~50KB | ~52KB |
+| GitHub Pages | ✓ Connected | Available |
 
-- **Leaflet Version** (`seattle-transit-leaflet.html`):
-  - More control over rendering
-  - Pre-loads all data for offline capability after initial load
-  - Manual GeoJSON conversion
+**Recommendation**: Use the `ArcGIS_JS_API` branch for production deployments.
 
 ## Configuration
 
@@ -181,13 +208,15 @@ const DRAW_ORDER = {
 
 ## Development
 
-### File Structure
+### Repository Structure
 
 ```
-seattle-transit-map/
-├── seattle-transit-arcgis.html    # ArcGIS JS SDK version
-├── seattle-transit-leaflet.html   # Leaflet version
-└── README.md                       # This file
+PugetSoundTransitExplorer/
+├── ArcGIS_JS_API branch (production)
+│   └── seattle-transit-arcgis.html    # ArcGIS JS SDK implementation
+├── leaflet branch
+│   └── seattle-transit-leaflet.html   # Leaflet.js implementation
+└── README.md                           # This file (both branches)
 ```
 
 ### Code Organization
@@ -236,7 +265,8 @@ case 'newmode':
 
 ## Credits
 
-- **Map Data**: ArcGIS Feature Service (Western Washington Transit Network)
+- **Data Collection & Processing**: Transit network data compiled, synthesized, and maintained by the project author
+- **Data Source**: Western Washington Transit Network Feature Service (ArcGIS Online)
 - **Base Map**: Esri World Imagery
 - **Mapping Libraries**: 
   - ArcGIS JS SDK 4.30
@@ -259,8 +289,8 @@ Contributions welcome! Please:
 
 ## Contact
 
-For questions or issues, please open a GitHub issue or contact [your-email@example.com]
+For questions or issues, please open a GitHub issue at [https://github.com/zhenghan1994/PugetSoundTransitExplorer/issues](https://github.com/zhenghan1994/PugetSoundTransitExplorer/issues) or contact zhenghan1994@gmail.com
 
 ---
 
-**Live Demo**: [https://yourusername.github.io/seattle-transit-map](https://yourusername.github.io/seattle-transit-map)
+**Live Demo**: [https://zhenghan1994.github.io/PugetSoundTransitExplorer](https://zhenghan1994.github.io/PugetSoundTransitExplorer)
