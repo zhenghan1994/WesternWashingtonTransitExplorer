@@ -2,7 +2,6 @@
 
 An interactive web map visualizing the Western Washington transit network with multiple viewing modes, built with ArcGIS JS SDK.
 
-![Puget Sound Transit Explorer](https://via.placeholder.com/800x400?text=Puget+Sound+Transit+Explorer)
 
 ## Implementation Note
 
@@ -64,12 +63,16 @@ The Leaflet branch remains available for reference and for scenarios requiring m
 
 ## Data Source
 
-**ArcGIS Feature Service** (created and maintained by the project author):
-- Base URL: `https://services7.arcgis.com/m6uLpqj7MgjPU371/arcgis/rest/services/Western_Washington_Transit_Network/FeatureServer`
-- Main Layer: Layer 2 (transit network segments)
-- Transit Routes: Layer 4 (route attributes and agency information)
+**Western Washington Transit Network Feature Service** (ArcGIS Online)
 
-The feature service aggregates and synthesizes transit data from multiple regional agencies including King County Metro, Sound Transit, Pierce Transit, Community Transit, and others. The data includes service level classifications, transit right-of-way types, trolleybus infrastructure, and temporal attributes for tracking network changes over time.
+This feature service is compiled, synthesized, and maintained in-house as part of this project. It aggregates transit data from multiple regional agencies including King County Metro, Sound Transit, Pierce Transit, Community Transit, and others.
+
+**Service Details:**
+- **REST API**: [Western Washington Transit Network](https://services7.arcgis.com/m6uLpqj7MgjPU371/arcgis/rest/services/Western_Washington_Transit_Network/FeatureServer)
+- **Main Layer**: Layer 2 (transit network segments) 
+- **Transit Routes**: Layer 4 (route attributes and agency information)
+
+The data includes service level classifications, transit right-of-way types, trolleybus infrastructure, and temporal attributes for tracking network changes over time.
 
 ### Service Level Codes
 
@@ -265,8 +268,7 @@ case 'newmode':
 
 ## Credits
 
-- **Data Collection & Processing**: Transit network data compiled, synthesized, and maintained by the project author
-- **Data Source**: Western Washington Transit Network Feature Service (ArcGIS Online)
+- **Transit Network Data**: Western Washington Transit Network Feature Service ([ArcGIS Rest API](https://services7.arcgis.com/m6uLpqj7MgjPU371/arcgis/rest/services/Western_Washington_Transit_Network/FeatureServer)), compiled and maintained in-house as part of this project
 - **Base Map**: Esri World Imagery
 - **Mapping Libraries**: 
   - ArcGIS JS SDK 4.30
