@@ -299,8 +299,8 @@ const isRoute = n => /route/i.test(n) && !/table/i.test(n) && !/metro/i.test(n) 
 const DOMAINS = {
   ServiceLevel_v2: {
     100:'Light Rail',
-    105:'Very Frequent (≤10 min)',
-    104:'Frequent (10-15 min)',
+	101:'Ferry',102:'Foot Ferry',
+    105:'Very Frequent (≤10 min)', 104:'Frequent (10-15 min)',
     106:'Frequent (15 min)',
     107:'Partial Frequent (15-30 min)',
     108:'Regular (30 min)',
@@ -308,6 +308,7 @@ const DOMAINS = {
     116:'Peak Only',
     199:'Dial-A-Ride Transit (DART)',
 	295:'Night-owl Only',
+	296:'Summer Weekend Only', 297:'Summer Service Only', 298:'Weekend Service Only',
 	299:'Snow Route Only',
 	998:'No Regular Service'
   },
@@ -352,15 +353,17 @@ const DOMAINS = {
 // ── Service Level color map ───────────────────────────────────────────────────
 const SL_META = {
   100: { cat:'Rail infrastructure',  bg:'#FFE566', text:'#3D3000' },
+  101: { cat:'Ferry',  	             bg:'#0070FF', text:'#3D3000' },
+  102: { cat:'Foot Ferry',           bg:'#73B2FF', text:'#3D3000' },
   105: { cat:'High frequency',       bg:'#FF5FA3', text:'#4D0D28' },
-  104: { cat:'High frequency',       bg:'#56B4E9', text:'#0A2D42' },
-  106: { cat:'High frequency',       bg:'#56B4E9', text:'#0A2D42' },
-  107: { cat:'Partial frequency',    bg:'#8BAA8C', text:'#3D2800' },
-  206: { cat:'Partial frequency',    bg:'#8BAA8C', text:'#3D2800' },
-  207: { cat:'Partial frequency',    bg:'#8BAA8C', text:'#3D2800' },
-  108: { cat:'Regular',              bg:'#CC7722', text:'#3A1E00' },
-  109: { cat:'Regular',              bg:'#994422', text:'#301200' },
-  116: { cat:'Limited / special',    bg:'#773388', text:'#250D2C' },
+  104: { cat:'High frequency',       bg:'#FF6E40', text:'#0A2D42' },
+  106: { cat:'High frequency',       bg:'#FF6E40', text:'#0A2D42' },
+  107: { cat:'Partial frequency',    bg:'#00BCD4', text:'#3D2800' },
+  206: { cat:'Partial frequency',    bg:'#00BCD4', text:'#3D2800' },
+  207: { cat:'Partial frequency',    bg:'#00BCD4', text:'#3D2800' },
+  108: { cat:'Regular',              bg:'#00838F', text:'#3A1E00' },
+  109: { cat:'Regular',              bg:'#898944', text:'#301200' },
+  116: { cat:'Limited / special',    bg:'#78909C', text:'#250D2C' },
   199: { cat:'Demand-responsive',    bg:'#9977CC', text:'#241545' },
   998: { cat:'No Regular Service',   bg:'#B2B2B2', text:'#250D2C' },
   999: { cat:'No Regular Service',   bg:'#B2B2B2', text:'#250D2C' },
@@ -375,7 +378,7 @@ function normalizeSL(val) {
   if (v === 106) return 104; // → Frequent (10-15 min)
   if (v === 207 || v === 206) return 107; // → Regular (15-30 min)
   if (v === 113 || v === 110) return 109; // → Regular (>30 min)
-  if (v === 998 || v === 999 || v === 299 || v === 295) return 998; //  → No Regular Service
+  if (v === 998 || v === 999 || (v > 294 && v < 300)) return 998; //  → No Regular Service
   return v;
 }
 
@@ -449,7 +452,9 @@ let overlayLayersLoaded  = false;
 function getSlColor(val) {
   const nval = normalizeSL(val);
   if (nval == null) return '#4fc3f7';
-  const src = SL_COLOR_MAP[nval] ?? SL_META[nval];
+  // Always use SL_META for Ferry (101) and Foot Ferry (102) to ensure correct distinct colors
+  if (nval === 101 || nval === 102) return SL_META[nval]?.bg ?? '#4fc3f7';
+  const src = SL_META[nval];
   return src ? src.bg : '#4fc3f7';
 }
 function featureColorForPeriod(props) {
@@ -485,7 +490,11 @@ function getFeatureStyle(props) {
   const val = props?.[activePeriod];
   if (val == null || Number(val) >= 998) return { color:'#E1E1E1', weight:1, opacity:0.4, fillOpacity:0 };
   const c = featureColorForPeriod(props);
-  return { color:c, weight:2, opacity:0.9, fillColor:c, fillOpacity:0.2, offset:0.8 };
+  const nval = normalizeSL(val);
+  // Ferry (101) and Foot Ferry (102) always use dashed lines — check base ServiceLevel, not current period
+  const baseServiceLevel = normalizeSL(props?.ServiceLevel);
+  const dashArray = (baseServiceLevel === 101 || baseServiceLevel === 102) ? '5, 5' : undefined;
+  return { color:c, weight:2.5, opacity:0.9, fillColor:c, fillOpacity:0.2, offset:1.25, dashArray };
 }
 
 // Returns true when a feature is muted in the current overlay mode —
@@ -603,7 +612,7 @@ const FIELD_ALIAS = {
 
 function slBarSeg(period, val) {
   const nval = normalizeSL(val);
-  const src = SL_COLOR_MAP[nval] ?? SL_META[nval];
+  const src = SL_META[nval];
   const bg  = src ? src.bg   : 'rgba(100,160,255,0.08)';
   const col = src ? src.text : 'var(--muted)';
   const label = nval != null ? (decodeDomain('ServiceLevel', nval) ?? '—') : '—';
@@ -683,7 +692,7 @@ function showInfoPanel(layerName, props) {
 
     sortedKeys.forEach(slKey => {
       const slLabel = slKey === '__null__' ? 'Unknown' : (decodeDomain('ServiceLevel', Number(slKey)) ?? slKey); // use non-normalized slkey to return true SL value
-      const src = SL_COLOR_MAP[Number(slKey)] ?? SL_META[Number(slKey)];
+      const src = SL_META[Number(slKey)];
       const pillStyle = src ? 'background:' + src.bg + ';color:' + src.text : 'background:var(--panel2);color:var(--muted)';
       html += `<div class="transit-group-label"><span class="tgl-pill" style="${pillStyle}">${slLabel}</span><span class="tgl-line"></span></div>`;
       // Deduplicate by route number within each ServiceLevel group
@@ -828,7 +837,7 @@ function toGeoJSON(feature, geomType) {
 
 // ── Legend ───────────────────────────────────────────────────────────────────
 const DRAW_ORDER = {
-	SL: [100, 105, 104, 107, 108, 109, 116, 199, 998],
+	SL: [100, 101, 102, 105, 104, 107, 108, 109, 116, 199, 998],
 	TROLLEY: [1, 2, 3, 4, 0],
 	BUSLANE: [7, 6, 5, 4, 2, 3, 9, 10, 1],
 };
@@ -866,7 +875,7 @@ function buildLegend(slCounts_override) {
   }
   if (displayMode === 'row') {
     const present = new Set(allFeaturePropsAll.map(p => p.TransitROW).filter(v => v != null && Number(v) !== 1));
-    [[2,'#FFD700'],[3,'#FF8C00'],[4,'#00CC66'],[5,'#00AAAA'],[6,'#00FFCC'],[7,'#CC88FF'],[9,'#FF6600']].forEach(([code, color]) => {
+    [[2,'#FFD700'],[3,'#FF8C00'],[4,'#00CC66'],[5,'#00AAAA'],[6,'#00FFCC'],[7,'#CC88FF'],[9,'#FF6600'],[10,'#FF6600']].forEach(([code, color]) => {
       if (!present.has(code) && !present.has(String(code))) return;
       const item = document.createElement('div'); item.className = 'legend-item';
       item.innerHTML = `<div class="legend-swatch" style="background:${color}"></div><div class="legend-label">${DOMAINS.TransitROW[code] ?? code}</div>`;
@@ -877,7 +886,9 @@ function buildLegend(slCounts_override) {
   const counts = slCounts_override ?? slCounts;
   SL_DRAW_ORDER_LEGEND.forEach(code => {
     const count = counts[code]; if (!count) return;
-    const src = SL_COLOR_MAP[code] ?? SL_META[code]; if (!src) return;
+    // Always use SL_META for Ferry (101) and Foot Ferry (102) to ensure correct distinct colors
+    const src = SL_META[code];
+    if (!src) return;
     const item = document.createElement('div'); item.className = 'legend-item';
     item.innerHTML = `<div class="legend-swatch" style="background:${src.bg}"></div><div class="legend-label">${decodeDomain('ServiceLevel', code) ?? code}</div><div class="legend-count">${count.toLocaleString()}</div>`;
     container.appendChild(item);
@@ -1007,7 +1018,12 @@ async function init() {
         const group = L.geoJSON({ type:'FeatureCollection', features:geojsonFeatures }, {
           style: feature => {
             const c = featureColorForPeriod(feature.properties);
-            return { color:c, weight:2, opacity:0.9, fillColor:c, fillOpacity:0.2, offset:0.8 };
+            const val = feature.properties?.[activePeriod];
+            const nval = normalizeSL(val);
+            // Ferry (101) and Foot Ferry (102) always use dashed lines — check base ServiceLevel, not current period
+            const baseServiceLevel = normalizeSL(feature.properties?.ServiceLevel);
+            const dashArray = (baseServiceLevel === 101 || baseServiceLevel === 102) ? '5, 5' : undefined;
+            return { color:c, weight:2.4, opacity:0.9, fillColor:c, fillOpacity:0.2, offset:1.5, dashArray };
           },
           pointToLayer: (feature, latlng) => {
             const c = featureColor(feature.properties);
