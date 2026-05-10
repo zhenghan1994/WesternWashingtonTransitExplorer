@@ -304,7 +304,8 @@ const DOMAINS = {
     106:'Frequent (15 min)',
     107:'Partial Frequent (15-30 min)',
     108:'Regular (30 min)',
-    109:'Regular (>30 min)',
+    109:'Regular (30-60 min)',
+	113:'Limited (60+ min)',
     116:'Peak Only',
     199:'Dial-A-Ride Transit (DART)',
 	295:'Night-owl Only',
@@ -362,8 +363,9 @@ const SL_META = {
   206: { cat:'Partial frequency',    bg:'#00BCD4', text:'#3D2800' },
   207: { cat:'Partial frequency',    bg:'#00BCD4', text:'#3D2800' },
   108: { cat:'Regular',              bg:'#00838F', text:'#3A1E00' },
-  109: { cat:'Regular',              bg:'#898944', text:'#301200' },
-  116: { cat:'Limited / special',    bg:'#78909C', text:'#250D2C' },
+  109: { cat:'Regular',              bg:'#A7C6B3', text:'#301200' },
+  113: { cat:'Limited',              bg:'#A87000', text:'#250D2C' },
+  116: { cat:'Peak Only',            bg:'#C2B280', text:'#250D2C' },
   199: { cat:'Demand-responsive',    bg:'#9977CC', text:'#241545' },
   998: { cat:'No Regular Service',   bg:'#B2B2B2', text:'#250D2C' },
   999: { cat:'No Regular Service',   bg:'#B2B2B2', text:'#250D2C' },
@@ -377,7 +379,7 @@ function normalizeSL(val) {
   const v = Number(val);
   if (v === 106) return 104; // → Frequent (10-15 min)
   if (v === 207 || v === 206) return 107; // → Regular (15-30 min)
-  if (v === 113 || v === 110) return 109; // → Regular (>30 min)
+  if (v === 110) return 109; // → Regular (30-60 min)
   if (v === 998 || v === 999 || (v > 294 && v < 300)) return 998; //  → No Regular Service
   return v;
 }
@@ -433,6 +435,20 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/
   attribution: 'Esri World Imagery'
 }).addTo(map);
 
+// ── Zoom level tracking for debugging offset rendering ────────────────────────
+let currentZoom = 13;
+map.on('zoom', () => {
+  currentZoom = map.getZoom();
+  console.log(`🗺️ Zoom level: ${currentZoom} (Offset: ${currentZoom >= 13 ? 'enabled' : 'disabled'})`);
+  refreshBaseStyle(); // Redraw with new offset values
+});
+console.log(`🗺️ Initial zoom level: ${currentZoom}`);
+
+// Dynamic offset: disable at zoom levels < 13 to avoid curve loops
+function getOffsetForZoom() {
+  return currentZoom >= 13 ? 1 : 0;
+}
+
 let layerGroups    = {};
 let layerGroupsAll = {};
 let layerGeomTypes = {};
@@ -466,21 +482,21 @@ function featureColorForPeriod(props) {
 const MUTED = { color:'#252d3d', weight:1, opacity:0.22, fillOpacity:0 };
 
 const TROLLEY_STYLE = {
-  1: { color:'#00CFFF', weight:3,   opacity:0.95, fillOpacity:0 },
-  2: { color:'#3A7CA5', weight:2.5, opacity:0.80, fillOpacity:0 },
-  3: { color:'#FFAA00', weight:2.5, opacity:0.85, fillOpacity:0 },
-  4: { color:'#5588AA', weight:2,   opacity:0.65, fillOpacity:0 },
+  1: { color:'#00CFFF', weight:1.9,   opacity:0.95, fillOpacity:0 },
+  2: { color:'#3A7CA5', weight:1.9, opacity:0.80, fillOpacity:0 },
+  3: { color:'#FFAA00', weight:1.9, opacity:0.85, fillOpacity:0 },
+  4: { color:'#5588AA', weight:1.9,   opacity:0.65, fillOpacity:0 },
 };
 
 const ROW_STYLE = {
-  2: { color:'#FFD700', weight:3, opacity:0.90, fillOpacity:0 },
-  3: { color:'#FF8C00', weight:3, opacity:0.90, fillOpacity:0 },
-  4: { color:'#00CC66', weight:3, opacity:0.90, fillOpacity:0 },
-  5: { color:'#00AAAA', weight:3, opacity:0.90, fillOpacity:0 },
-  6: { color:'#00FFCC', weight:3, opacity:0.90, fillOpacity:0 },
-  7: { color:'#CC88FF', weight:3, opacity:0.90, fillOpacity:0 },
-  9: { color:'#FF6600', weight:3, opacity:0.90, fillOpacity:0 },
- 10: { color:'#FF6600', weight:3, opacity:0.90, fillOpacity:0 },
+  2: { color:'#FFD700', weight:1.9, opacity:0.90, fillOpacity:0 },
+  3: { color:'#FF8C00', weight:1.9, opacity:0.90, fillOpacity:0 },
+  4: { color:'#00CC66', weight:1.9, opacity:0.90, fillOpacity:0 },
+  5: { color:'#00AAAA', weight:1.9, opacity:0.90, fillOpacity:0 },
+  6: { color:'#00FFCC', weight:1.9, opacity:0.90, fillOpacity:0 },
+  7: { color:'#CC88FF', weight:1.9, opacity:0.90, fillOpacity:0 },
+  9: { color:'#FF6600', weight:1.9, opacity:0.90, fillOpacity:0 },
+ 10: { color:'#FF6600', weight:1.9, opacity:0.90, fillOpacity:0 },
 };
 
 // ── Style helpers ─────────────────────────────────────────────────────────────
@@ -494,7 +510,8 @@ function getFeatureStyle(props) {
   // Ferry (101) and Foot Ferry (102) always use dashed lines — check base ServiceLevel, not current period
   const baseServiceLevel = normalizeSL(props?.ServiceLevel);
   const dashArray = (baseServiceLevel === 101 || baseServiceLevel === 102) ? '5, 5' : undefined;
-  return { color:c, weight:2.5, opacity:0.9, fillColor:c, fillOpacity:0.2, offset:1.25, dashArray };
+  const offset = getOffsetForZoom();
+  return { color:c, weight:1.9, opacity:0.9, fillColor:c, fillOpacity:0.2, offset, dashArray };
 }
 
 // Returns true when a feature is muted in the current overlay mode —
@@ -837,7 +854,7 @@ function toGeoJSON(feature, geomType) {
 
 // ── Legend ───────────────────────────────────────────────────────────────────
 const DRAW_ORDER = {
-	SL: [100, 101, 102, 105, 104, 107, 108, 109, 116, 199, 998],
+	SL: [100, 101, 102, 105, 104, 107, 108, 109, 113, 116, 199, 998],
 	TROLLEY: [1, 2, 3, 4, 0],
 	BUSLANE: [7, 6, 5, 4, 2, 3, 9, 10, 1],
 };
@@ -1023,7 +1040,8 @@ async function init() {
             // Ferry (101) and Foot Ferry (102) always use dashed lines — check base ServiceLevel, not current period
             const baseServiceLevel = normalizeSL(feature.properties?.ServiceLevel);
             const dashArray = (baseServiceLevel === 101 || baseServiceLevel === 102) ? '5, 5' : undefined;
-            return { color:c, weight:2.4, opacity:0.9, fillColor:c, fillOpacity:0.2, offset:1.5, dashArray };
+            const offset = getOffsetForZoom();
+            return { color:c, weight:2.4, opacity:0.9, fillColor:c, fillOpacity:0.2, offset, dashArray };
           },
           pointToLayer: (feature, latlng) => {
             const c = featureColor(feature.properties);
