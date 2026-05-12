@@ -435,20 +435,6 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/
   attribution: 'Esri World Imagery'
 }).addTo(map);
 
-// ── Zoom level tracking for debugging offset rendering ────────────────────────
-let currentZoom = 13;
-map.on('zoom', () => {
-  currentZoom = map.getZoom();
-  console.log(`🗺️ Zoom level: ${currentZoom} (Offset: ${currentZoom >= 13 ? 'enabled' : 'disabled'})`);
-  refreshBaseStyle(); // Redraw with new offset values
-});
-console.log(`🗺️ Initial zoom level: ${currentZoom}`);
-
-// Dynamic offset: disable at zoom levels < 13 to avoid curve loops
-function getOffsetForZoom() {
-  return currentZoom >= 13 ? 1 : 0;
-}
-
 let layerGroups    = {};
 let layerGroupsAll = {};
 let layerGeomTypes = {};
@@ -510,8 +496,7 @@ function getFeatureStyle(props) {
   // Ferry (101) and Foot Ferry (102) always use dashed lines — check base ServiceLevel, not current period
   const baseServiceLevel = normalizeSL(props?.ServiceLevel);
   const dashArray = (baseServiceLevel === 101 || baseServiceLevel === 102) ? '5, 5' : undefined;
-  const offset = getOffsetForZoom();
-  return { color:c, weight:1.9, opacity:0.9, fillColor:c, fillOpacity:0.2, offset, dashArray };
+  return { color:c, weight:1.9, opacity:0.9, fillColor:c, fillOpacity:0.2, offset:1, dashArray };
 }
 
 // Returns true when a feature is muted in the current overlay mode —
@@ -832,11 +817,26 @@ async function fetchAll(layerId, where) {
   let offset = 0, all = [], exceeded = true;
   while (exceeded) {
     const p = new URLSearchParams({ where, outFields:'*', outSR:'4326', resultOffset:offset, resultRecordCount:PAGE, f:'json' });
-    const d = await (await fetch(`${BASE}/${layerId}/query?${p}`)).json();
-    if (d.error) throw new Error(d.error.message);
-    all = all.concat(d.features || []);
-    exceeded = d.exceededTransferLimit === true && (d.features||[]).length > 0;
-    offset += PAGE;
+    const url = `${BASE}/${layerId}/query?${p}`;
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.error(`❌ Fetch error for layer ${layerId}:`, response.status, response.statusText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const d = await response.json();
+      if (d.error) {
+        console.error(`❌ API error for layer ${layerId}:`, d.error.message);
+        throw new Error(d.error.message);
+      }
+      console.log(`✅ Loaded ${d.features?.length || 0} features from layer ${layerId} (offset ${offset})`);
+      all = all.concat(d.features || []);
+      exceeded = d.exceededTransferLimit === true && (d.features||[]).length > 0;
+      offset += PAGE;
+    } catch (e) {
+      console.error(`❌ Failed to fetch layer ${layerId}:`, e.message);
+      throw e;
+    }
   }
   return all;
 }
@@ -943,20 +943,24 @@ document.getElementById('periodSwitcher').addEventListener('click', e => {
 // ── Main ─────────────────────────────────────────────────────────────────────
 async function init() {
   try {
+    console.log('🚀 Init started - Fetching metadata...');
     setStatus('loading','Connecting…');
     setLoader(true,'Fetching FeatureServer metadata…','',5);
 
     // 1. Fetch service metadata for layer info
     const meta = await (await fetch(`${BASE}?f=json`)).json();
     if (meta.error) throw new Error(meta.error.message);
+    console.log(`✅ Metadata loaded: ${meta.layers?.length || 0} layers, ${meta.tables?.length || 0} tables`);
 
     // Use the single consolidated layer (ID 2)
     const mainLayer = (meta.layers||[]).find(l => l.id === LAYER_ID);
     if (!mainLayer) throw new Error(`Layer ${LAYER_ID} not found in service`);
+    console.log(`✅ Found main layer (ID ${LAYER_ID})`);
     
     const spatialDefs = [mainLayer];
     const transitTables   = (meta.tables||[]).filter(l => /transit_table$/i.test(l.name));
     const routeAttrTables = (meta.tables||[]).filter(l => /routeatt/i.test(l.name));
+    console.log(`✅ Found ${transitTables.length} transit tables, ${routeAttrTables.length} route attribute tables`);
 
 
 
@@ -1040,8 +1044,7 @@ async function init() {
             // Ferry (101) and Foot Ferry (102) always use dashed lines — check base ServiceLevel, not current period
             const baseServiceLevel = normalizeSL(feature.properties?.ServiceLevel);
             const dashArray = (baseServiceLevel === 101 || baseServiceLevel === 102) ? '5, 5' : undefined;
-            const offset = getOffsetForZoom();
-            return { color:c, weight:2.4, opacity:0.9, fillColor:c, fillOpacity:0.2, offset, dashArray };
+            return { color:c, weight:2.4, opacity:0.9, fillColor:c, fillOpacity:0.2, offset:1.5, dashArray };
           },
           pointToLayer: (feature, latlng) => {
             const c = featureColor(feature.properties);
