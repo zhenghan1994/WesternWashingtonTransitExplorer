@@ -23,14 +23,14 @@
   body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex;flex-direction:column}
 
   /* Header */
-  header{display:flex;align-items:center;gap:14px;padding:0 18px;height:52px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;z-index:1000}
-  .wordmark{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);white-space:nowrap}
-  .divider{width:1px;height:20px;background:var(--border);flex-shrink:0}
-  .feed-label{font-family:var(--mono);font-size:10px;color:var(--muted);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .status-pill{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:rgba(67,224,155,.1);border:1px solid rgba(67,224,155,.25);font-family:var(--mono);font-size:10px;color:var(--green);flex-shrink:0;transition:all .3s}
+  header{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;height:auto;min-height:auto;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;z-index:1000;flex-wrap:wrap;overflow:visible}
+  .wordmark{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);line-height:1.2;word-break:break-word;flex:0 1 100%;max-width:100%;margin-bottom:4px}
+  .divider{width:1px;height:16px;background:var(--border);flex-shrink:0;display:none}
+  .feed-label{font-family:var(--mono);font-size:8px;color:var(--muted);flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;line-height:1.2;white-space:nowrap}
+  .status-pill{display:flex;align-items:center;gap:3px;padding:2px 6px;border-radius:16px;background:rgba(67,224,155,.1);border:1px solid rgba(67,224,155,.25);font-family:var(--mono);font-size:8px;color:var(--green);flex-shrink:0;transition:all .3s;white-space:nowrap}
   .status-pill.loading{background:rgba(79,195,247,.1);border-color:rgba(79,195,247,.25);color:var(--accent)}
   .status-pill.error{background:rgba(255,107,107,.1);border-color:rgba(255,107,107,.25);color:var(--red)}
-  .dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
+  .dot{width:4px;height:4px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
   /* Layout */
@@ -817,26 +817,11 @@ async function fetchAll(layerId, where) {
   let offset = 0, all = [], exceeded = true;
   while (exceeded) {
     const p = new URLSearchParams({ where, outFields:'*', outSR:'4326', resultOffset:offset, resultRecordCount:PAGE, f:'json' });
-    const url = `${BASE}/${layerId}/query?${p}`;
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        console.error(`❌ Fetch error for layer ${layerId}:`, response.status, response.statusText);
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      const d = await response.json();
-      if (d.error) {
-        console.error(`❌ API error for layer ${layerId}:`, d.error.message);
-        throw new Error(d.error.message);
-      }
-      console.log(`✅ Loaded ${d.features?.length || 0} features from layer ${layerId} (offset ${offset})`);
-      all = all.concat(d.features || []);
-      exceeded = d.exceededTransferLimit === true && (d.features||[]).length > 0;
-      offset += PAGE;
-    } catch (e) {
-      console.error(`❌ Failed to fetch layer ${layerId}:`, e.message);
-      throw e;
-    }
+    const d = await (await fetch(`${BASE}/${layerId}/query?${p}`)).json();
+    if (d.error) throw new Error(d.error.message);
+    all = all.concat(d.features || []);
+    exceeded = d.exceededTransferLimit === true && (d.features||[]).length > 0;
+    offset += PAGE;
   }
   return all;
 }
@@ -943,24 +928,20 @@ document.getElementById('periodSwitcher').addEventListener('click', e => {
 // ── Main ─────────────────────────────────────────────────────────────────────
 async function init() {
   try {
-    console.log('🚀 Init started - Fetching metadata...');
     setStatus('loading','Connecting…');
     setLoader(true,'Fetching FeatureServer metadata…','',5);
 
     // 1. Fetch service metadata for layer info
     const meta = await (await fetch(`${BASE}?f=json`)).json();
     if (meta.error) throw new Error(meta.error.message);
-    console.log(`✅ Metadata loaded: ${meta.layers?.length || 0} layers, ${meta.tables?.length || 0} tables`);
 
     // Use the single consolidated layer (ID 2)
     const mainLayer = (meta.layers||[]).find(l => l.id === LAYER_ID);
     if (!mainLayer) throw new Error(`Layer ${LAYER_ID} not found in service`);
-    console.log(`✅ Found main layer (ID ${LAYER_ID})`);
     
     const spatialDefs = [mainLayer];
     const transitTables   = (meta.tables||[]).filter(l => /transit_table$/i.test(l.name));
     const routeAttrTables = (meta.tables||[]).filter(l => /routeatt/i.test(l.name));
-    console.log(`✅ Found ${transitTables.length} transit tables, ${routeAttrTables.length} route attribute tables`);
 
 
 
