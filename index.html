@@ -23,21 +23,25 @@
   body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex;flex-direction:column}
 
   /* Header */
-  header{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;height:auto;min-height:auto;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;z-index:1000;flex-wrap:wrap;overflow:visible}
-  .wordmark{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);line-height:1.2;word-break:break-word;flex:0 1 100%;max-width:100%;margin-bottom:4px}
-  .divider{width:1px;height:16px;background:var(--border);flex-shrink:0;display:none}
-  .feed-label{font-family:var(--mono);font-size:8px;color:var(--muted);flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;line-height:1.2;white-space:nowrap}
-  .status-pill{display:flex;align-items:center;gap:3px;padding:2px 6px;border-radius:16px;background:rgba(67,224,155,.1);border:1px solid rgba(67,224,155,.25);font-family:var(--mono);font-size:8px;color:var(--green);flex-shrink:0;transition:all .3s;white-space:nowrap}
+  header{display:flex;align-items:center;gap:14px;padding:0 18px;height:52px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;z-index:1000}
+  .wordmark{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);white-space:nowrap}
+  .divider{width:1px;height:20px;background:var(--border);flex-shrink:0}
+  .feed-label{font-family:var(--mono);font-size:10px;color:var(--muted);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .status-pill{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:rgba(67,224,155,.1);border:1px solid rgba(67,224,155,.25);font-family:var(--mono);font-size:10px;color:var(--green);flex-shrink:0;transition:all .3s}
   .status-pill.loading{background:rgba(79,195,247,.1);border-color:rgba(79,195,247,.25);color:var(--accent)}
   .status-pill.error{background:rgba(255,107,107,.1);border-color:rgba(255,107,107,.25);color:var(--red)}
-  .dot{width:4px;height:4px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
+  .dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
   /* Layout */
   .main{display:flex;flex:1;overflow:hidden}
 
   /* Sidebar */
-  .sidebar{width:290px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;z-index:500}
+  .sidebar{width:290px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;z-index:500;position:relative}
+  .sidebar.collapsed{width:0;overflow:hidden}
+  .sidebar-collapse-btn{position:absolute;right:-28px;top:8px;width:24px;height:24px;background:var(--panel);border:1px solid var(--border);border-radius:0 4px 4px 0;color:var(--muted);cursor:pointer;font-size:12px;padding:0;display:none;z-index:501}
+  .sidebar-collapse-btn:hover{color:var(--text);background:var(--panel2)}
+  .sidebar.collapsed .sidebar-collapse-btn{transform:rotate(180deg)}
   .sidebar-section{padding:14px 16px;border-bottom:1px solid var(--border)}
   .section-label{font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
 
@@ -153,8 +157,10 @@
 
   /* ── Mobile: bottom bar layout ─────────────────────────────────────────── */
   @media (max-width: 768px) {
+    .sidebar-collapse-btn{display:flex;align-items:center;justify-content:center;right:auto;left:8px;top:8px}
     .main{flex-direction:column}
     .sidebar{width:100%;height:280px;flex-shrink:0;border-right:none;border-top:1px solid var(--border);order:2}
+    .sidebar.collapsed{width:100%;height:0}
     #map{order:1}
     /* On mobile, info panel replaces the sidebar rather than floating above it */
     .info-panel{
@@ -212,15 +218,12 @@
   <span class="wordmark">Western Washington Transit Explorer</span>
   <div class="divider"></div>
   <span class="feed-label"></span>
-  <div class="status-pill loading" id="statusPill">
-    <div class="dot"></div>
-    <span id="statusText">Connecting…</span>
-  </div>
 </header>
 
 <div class="main" style="position:relative;">
 
   <div class="sidebar" id="sidebar">
+    <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse sidebar">▲</button>
 
     <div class="sidebar-section" style="padding-bottom:10px;">
       <div class="section-label">Map View</div>
@@ -435,6 +438,19 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/
   attribution: 'Esri World Imagery'
 }).addTo(map);
 
+// ── Zoom level tracking for dynamic offset ──────────────────────────────────
+let currentZoom = 13;
+map.on('zoom', () => {
+  currentZoom = map.getZoom();
+  console.log(`🗺️ Zoom: ${currentZoom} (Offset: ${currentZoom >= 13 ? 'on' : 'off'})`);
+  refreshBaseStyle(); // Redraw with new offset values
+});
+
+// Dynamic offset: disable at zoom < 13 to avoid curve loops and improve performance
+function getOffsetForZoom() {
+  return currentZoom >= 13 ? 1 : 0;
+}
+
 let layerGroups    = {};
 let layerGroupsAll = {};
 let layerGeomTypes = {};
@@ -496,7 +512,8 @@ function getFeatureStyle(props) {
   // Ferry (101) and Foot Ferry (102) always use dashed lines — check base ServiceLevel, not current period
   const baseServiceLevel = normalizeSL(props?.ServiceLevel);
   const dashArray = (baseServiceLevel === 101 || baseServiceLevel === 102) ? '5, 5' : undefined;
-  return { color:c, weight:1.9, opacity:0.9, fillColor:c, fillOpacity:0.2, offset:1, dashArray };
+  const offset = getOffsetForZoom();
+  return { color:c, weight:1.9, opacity:0.9, fillColor:c, fillOpacity:0.2, offset, dashArray };
 }
 
 // Returns true when a feature is muted in the current overlay mode —
@@ -581,7 +598,7 @@ async function setDisplayMode(mode) {
 
 // ── UI helpers ───────────────────────────────────────────────────────────────
 const $  = id => document.getElementById(id);
-const setStatus = (cls,txt) => { $('statusPill').className='status-pill '+cls; $('statusText').textContent=txt; };
+const setStatus = (cls,txt) => { const el=$('statusPill'); if(el) { el.className='status-pill '+cls; const t=$('statusText'); if(t) t.textContent=txt; } };
 const setLoader = (vis,txt='',sub='',pct=null) => {
   $('loader').className = vis ? 'loader' : 'loader hidden';
   $('loaderText').textContent = txt;
@@ -1025,7 +1042,8 @@ async function init() {
             // Ferry (101) and Foot Ferry (102) always use dashed lines — check base ServiceLevel, not current period
             const baseServiceLevel = normalizeSL(feature.properties?.ServiceLevel);
             const dashArray = (baseServiceLevel === 101 || baseServiceLevel === 102) ? '5, 5' : undefined;
-            return { color:c, weight:2.4, opacity:0.9, fillColor:c, fillOpacity:0.2, offset:1.5, dashArray };
+            const offset = getOffsetForZoom();
+            return { color:c, weight:2.4, opacity:0.9, fillColor:c, fillOpacity:0.2, offset, dashArray };
           },
           pointToLayer: (feature, latlng) => {
             const c = featureColor(feature.properties);
@@ -1103,8 +1121,11 @@ async function init() {
     buildLegend();
     setLoader(false);
     setStatus('', ' loaded');
-    const dot = $('statusPill').querySelector('.dot');
-    if (dot) dot.style.animation = 'none';
+    const statusPill = $('statusPill');
+    if (statusPill) {
+      const dot = statusPill.querySelector('.dot');
+      if (dot) dot.style.animation = 'none';
+    }
 
   } catch(err) {
     setLoader(false);
@@ -1115,6 +1136,15 @@ async function init() {
 }
 
 init();
+
+// ── Sidebar collapse toggle ────────────────────────────────────────────────
+document.getElementById('sidebarCollapseBtn')?.addEventListener('click', () => {
+  const sidebar = document.getElementById('sidebar');
+  const btn = document.getElementById('sidebarCollapseBtn');
+  sidebar.classList.toggle('collapsed');
+  btn.textContent = sidebar.classList.contains('collapsed') ? '▼' : '▲';
+  btn.title = sidebar.classList.contains('collapsed') ? 'Expand sidebar' : 'Collapse sidebar';
+});
 </script>
 </body>
 </html>
