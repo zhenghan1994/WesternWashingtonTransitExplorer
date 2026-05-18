@@ -37,11 +37,7 @@
   .main{display:flex;flex:1;overflow:hidden}
 
   /* Sidebar */
-  .sidebar{width:290px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;z-index:500;position:relative}
-  .sidebar.collapsed{width:0;overflow:hidden}
-  .sidebar-collapse-btn{position:absolute;right:-28px;top:8px;width:24px;height:24px;background:var(--panel);border:1px solid var(--border);border-radius:0 4px 4px 0;color:var(--muted);cursor:pointer;font-size:12px;padding:0;display:none;z-index:501}
-  .sidebar-collapse-btn:hover{color:var(--text);background:var(--panel2)}
-  .sidebar.collapsed .sidebar-collapse-btn{transform:rotate(180deg)}
+  .sidebar{width:290px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;z-index:500}
   .sidebar-section{padding:14px 16px;border-bottom:1px solid var(--border)}
   .section-label{font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
 
@@ -157,10 +153,8 @@
 
   /* ── Mobile: bottom bar layout ─────────────────────────────────────────── */
   @media (max-width: 768px) {
-    .sidebar-collapse-btn{display:flex;align-items:center;justify-content:center;right:auto;left:8px;top:8px}
     .main{flex-direction:column}
     .sidebar{width:100%;height:280px;flex-shrink:0;border-right:none;border-top:1px solid var(--border);order:2}
-    .sidebar.collapsed{width:100%;height:0}
     #map{order:1}
     /* On mobile, info panel replaces the sidebar rather than floating above it */
     .info-panel{
@@ -218,12 +212,15 @@
   <span class="wordmark">Western Washington Transit Explorer</span>
   <div class="divider"></div>
   <span class="feed-label"></span>
+  <div class="status-pill loading" id="statusPill">
+    <div class="dot"></div>
+    <span id="statusText">Connecting…</span>
+  </div>
 </header>
 
 <div class="main" style="position:relative;">
 
   <div class="sidebar" id="sidebar">
-    <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse sidebar">▲</button>
 
     <div class="sidebar-section" style="padding-bottom:10px;">
       <div class="section-label">Map View</div>
@@ -309,7 +306,7 @@ const DOMAINS = {
     108:'Regular (30 min)',
     109:'Regular (30-60 min)',
 	113:'Limited (60+ min)',
-    116:'Peak Only',
+    116:'Limited (>90 min) or Peak Only',
     199:'Dial-A-Ride Transit (DART)',
 	295:'Night-owl Only',
 	296:'Summer Weekend Only', 297:'Summer Service Only', 298:'Weekend Service Only',
@@ -367,8 +364,9 @@ const SL_META = {
   207: { cat:'Partial frequency',    bg:'#00BCD4', text:'#3D2800' },
   108: { cat:'Regular',              bg:'#00838F', text:'#3A1E00' },
   109: { cat:'Regular',              bg:'#A7C6B3', text:'#301200' },
-  113: { cat:'Limited',              bg:'#A87000', text:'#250D2C' },
-  116: { cat:'Peak Only',            bg:'#C2B280', text:'#250D2C' },
+  113: { cat:'Limited',              bg:'#E69862', text:'#250D2C' },
+  114: { cat:'Limited (>90 min) or Peak Only', bg:'#894444', text:'#250D2C' },
+  116: { cat:'Limited (>90 min) or Peak Only', bg:'#894444', text:'#250D2C' },
   199: { cat:'Demand-responsive',    bg:'#9977CC', text:'#241545' },
   998: { cat:'No Regular Service',   bg:'#B2B2B2', text:'#250D2C' },
   999: { cat:'No Regular Service',   bg:'#B2B2B2', text:'#250D2C' },
@@ -382,6 +380,7 @@ function normalizeSL(val) {
   const v = Number(val);
   if (v === 106) return 104; // → Frequent (10-15 min)
   if (v === 207 || v === 206) return 107; // → Regular (15-30 min)
+  if (v === 114 || v === 116) return 116; // → Regular (Limited (90 min) or Peak Only)
   if (v === 110) return 109; // → Regular (30-60 min)
   if (v === 998 || v === 999 || (v > 294 && v < 300)) return 998; //  → No Regular Service
   return v;
@@ -598,7 +597,7 @@ async function setDisplayMode(mode) {
 
 // ── UI helpers ───────────────────────────────────────────────────────────────
 const $  = id => document.getElementById(id);
-const setStatus = (cls,txt) => { const el=$('statusPill'); if(el) { el.className='status-pill '+cls; const t=$('statusText'); if(t) t.textContent=txt; } };
+const setStatus = (cls,txt) => { $('statusPill').className='status-pill '+cls; $('statusText').textContent=txt; };
 const setLoader = (vis,txt='',sub='',pct=null) => {
   $('loader').className = vis ? 'loader' : 'loader hidden';
   $('loaderText').textContent = txt;
@@ -856,7 +855,7 @@ function toGeoJSON(feature, geomType) {
 
 // ── Legend ───────────────────────────────────────────────────────────────────
 const DRAW_ORDER = {
-	SL: [100, 101, 102, 105, 104, 107, 108, 109, 113, 116, 199, 998],
+	SL: [100, 101, 102, 105, 104, 107, 108, 109, 113, 114, 116, 199, 998],
 	TROLLEY: [1, 2, 3, 4, 0],
 	BUSLANE: [7, 6, 5, 4, 2, 3, 9, 10, 1],
 };
@@ -1121,11 +1120,8 @@ async function init() {
     buildLegend();
     setLoader(false);
     setStatus('', ' loaded');
-    const statusPill = $('statusPill');
-    if (statusPill) {
-      const dot = statusPill.querySelector('.dot');
-      if (dot) dot.style.animation = 'none';
-    }
+    const dot = $('statusPill').querySelector('.dot');
+    if (dot) dot.style.animation = 'none';
 
   } catch(err) {
     setLoader(false);
@@ -1136,15 +1132,6 @@ async function init() {
 }
 
 init();
-
-// ── Sidebar collapse toggle ────────────────────────────────────────────────
-document.getElementById('sidebarCollapseBtn')?.addEventListener('click', () => {
-  const sidebar = document.getElementById('sidebar');
-  const btn = document.getElementById('sidebarCollapseBtn');
-  sidebar.classList.toggle('collapsed');
-  btn.textContent = sidebar.classList.contains('collapsed') ? '▼' : '▲';
-  btn.title = sidebar.classList.contains('collapsed') ? 'Expand sidebar' : 'Collapse sidebar';
-});
 </script>
 </body>
 </html>
