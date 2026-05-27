@@ -441,7 +441,11 @@ function decodeDomain(field, value) {
 }
 
 // ── Leaflet ──────────────────────────────────────────────────────────────────
-const map = L.map('map',{center:[47.6062,-122.3321],zoom:13});
+// Fixed extent for all map modes - centered on Seattle with broader view
+const DEFAULT_CENTER = [47.6062, -122.3321];
+const DEFAULT_ZOOM = 12;
+
+const map = L.map('map',{center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM});
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
   maxZoom: 19,
   attribution: 'Esri World Imagery'
@@ -594,13 +598,8 @@ async function setDisplayMode(mode) {
       Object.values(layerGroupsAll).forEach(g => { try { g.addTo(map); } catch(e){} });
       refreshBaseStyle();
       buildLegend();
-      if (mode === 'trolley') {
-        const electrified = allGeoJSONFeaturesAll.filter(f => Number(f.properties?.Electrified ?? 0) !== 0);
-        if (electrified.length) {
-          const bounds = L.geoJSON({ type:'FeatureCollection', features:electrified }).getBounds();
-          if (bounds.isValid()) map.fitBounds(bounds, { padding:[40,40] });
-        }
-      }
+      // Reset to default extent for all modes
+      map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
     }
   } finally { modeChanging = false; }
 }
@@ -793,10 +792,11 @@ $('backBtn').addEventListener('click', () => {
     try {
       const saved = localStorage.getItem(isMobile() ? 'sidebarHeightMobile' : 'sidebarWidth');
       if (saved) {
+        const size = Math.max(200, parseInt(saved)); // Enforce minimum size
         if (isMobile()) {
-          sidebar.style.height = saved + 'px';
+          sidebar.style.height = size + 'px';
         } else {
-          sidebar.style.width = saved + 'px';
+          sidebar.style.width = size + 'px';
         }
       }
     } catch(e) {}
@@ -808,6 +808,17 @@ $('backBtn').addEventListener('click', () => {
     startPos = isMobile() ? e.clientY : e.clientX;
     startSize = isMobile() ? sidebar.offsetHeight : sidebar.offsetWidth;
     e.preventDefault();
+  });
+
+  // Double-click to reset to default size
+  resizer.addEventListener('dblclick', () => {
+    const defaultSize = isMobile() ? 280 : 320;
+    if (isMobile()) {
+      sidebar.style.height = defaultSize + 'px';
+    } else {
+      sidebar.style.width = defaultSize + 'px';
+    }
+    saveSize(defaultSize);
   });
 
   document.addEventListener('mousemove', e => {
