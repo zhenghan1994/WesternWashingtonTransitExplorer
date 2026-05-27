@@ -41,7 +41,8 @@
 
   /* Sidebar */
   .sidebar{width:290px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;z-index:500}
-  .sidebar-section{padding:14px 16px;border-bottom:1px solid var(--border)}
+  .sidebar-section{padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+  .layers-list{flex:1;overflow-y:auto;min-height:0;}
   .section-label{font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
 
   /* Map */
@@ -199,14 +200,15 @@
     .legend-item{padding:5px 8px;font-size:11px;align-items:center}
     .legend-swatch{width:20px;flex-shrink:0}
 
-    /* Resizer: horizontal strip between map and sidebar on mobile */
+    /* Resizer: horizontal strip at the TOP of sidebar on mobile */
     #resizer{
       width:100%; height:10px;
       cursor:row-resize;
       border-left:none; border-right:none;
       border-top:1px solid var(--border);
       border-bottom:1px solid var(--border);
-      order:2; /* sits just above sidebar (same order, earlier in DOM) */
+      order:unset;
+      flex-shrink:0;
     }
     #resizer::before{
       width:24px; height:3px;
@@ -231,6 +233,7 @@
 <div class="main" style="position:relative;">
 
   <div class="sidebar" id="sidebar">
+    <div id="resizer"></div>
 
     <div class="sidebar-section" style="padding-bottom:10px;">
       <div class="section-label">Map View</div>
@@ -251,8 +254,6 @@
     </div>
 
   </div>
-
-  <div id="resizer"></div>
 
   <div style="flex:1;position:relative;display:flex;flex-direction:column;min-height:0;">
     <div id="map"></div>
@@ -824,12 +825,14 @@ $('backBtn').addEventListener('click', () => {
   document.addEventListener('mousemove', e => {
     if (!isDragging) return;
     const delta = (isMobile() ? e.clientY : e.clientX) - startPos;
-    const newSize = Math.max(200, Math.min(isMobile() ? 500 : 500, startSize + (isMobile() ? delta : delta)));
+    // On mobile: resizer is at top of panel, so dragging UP (negative delta) grows the panel
+    const newSize = Math.max(200, Math.min(500, startSize + (isMobile() ? -delta : delta)));
     if (isMobile()) {
       sidebar.style.height = newSize + 'px';
     } else {
       sidebar.style.width = newSize + 'px';
     }
+    map.invalidateSize();
   });
 
   document.addEventListener('mouseup', () => {
@@ -838,14 +841,45 @@ $('backBtn').addEventListener('click', () => {
       resizer.classList.remove('dragging');
       const size = isMobile() ? sidebar.offsetHeight : sidebar.offsetWidth;
       saveSize(size);
+      map.invalidateSize();
     }
   });
 
-  // Load saved size on page load
-  loadSize();
+  // Touch support for mobile
+  resizer.addEventListener('touchstart', e => {
+    isDragging = true;
+    startPos = isMobile() ? e.touches[0].clientY : e.touches[0].clientX;
+    startSize = isMobile() ? sidebar.offsetHeight : sidebar.offsetWidth;
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('touchmove', e => {
+    if (!isDragging) return;
+    const delta = (isMobile() ? e.touches[0].clientY : e.touches[0].clientX) - startPos;
+    // On mobile: resizer is at top of panel, so dragging UP (negative delta) grows the panel
+    const newSize = Math.max(200, Math.min(500, startSize + (isMobile() ? -delta : delta)));
+    if (isMobile()) {
+      sidebar.style.height = newSize + 'px';
+    } else {
+      sidebar.style.width = newSize + 'px';
+    }
+    map.invalidateSize();
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('touchend', () => {
+    if (isDragging) {
+      isDragging = false;
+      const size = isMobile() ? sidebar.offsetHeight : sidebar.offsetWidth;
+      saveSize(size);
+      map.invalidateSize();
+    }
+  });
+  // Notify Leaflet of correct map size after saved size is applied
+  setTimeout(() => map.invalidateSize(), 50);
   
   // Re-apply saved size on window resize (desktop ↔ mobile transition)
-  window.addEventListener('resize', loadSize);
+  window.addEventListener('resize', () => { loadSize(); map.invalidateSize(); });
 })();
 
 // ── Data helpers ─────────────────────────────────────────────────────────────
