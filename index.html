@@ -357,7 +357,8 @@ const DOMAINS = {
     CT:'Community Transit',PT:'Pierce Transit',
     IT:'Island Transit',   KT:'Kitsap Transit',
     ET:'Everett Transit',  SkT:'Skagit Transit',
-    OT:'Intercity Transit'
+    OT:'Intercity Transit', JT:'Jefferson Transit',
+	CL:'Clallam Transit', GH: 'Grays Harbor Transit'
   },
   WeekendSchedule: { 0:'Same as weekday', 1:'Reduced', 2:'None' }
 };
@@ -707,8 +708,7 @@ function showInfoPanel(layerName, props) {
     // Group by ServiceLevel, sorted ascending by numeric value (nulls last)
     const groups = {};
     activeRows.forEach(r => {
-      const slRaw = r.ServiceLevel != null ? r.ServiceLevel : null;
-      const slKey = slRaw != null ? slRaw : '__null__';
+      const slKey = r.ServiceLevel != null ? NormalizeSL(r.ServiceLevel) : '__null__';
       if (!groups[slKey]) groups[slKey] = [];
       groups[slKey].push(r);
     });
