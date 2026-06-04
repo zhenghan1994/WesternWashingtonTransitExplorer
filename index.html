@@ -359,7 +359,7 @@ const DOMAINS = {
     ET:'Everett Transit',  SkT:'Skagit Transit',
     OT:'Intercity Transit', JT:'Jefferson Transit',
 	CLT:'Clallam Transit', GHT:'Grays Harbor Transit',
-	SD:'City of Seattle',WSF:'Washington State Ferry',
+	SD:'City of Seattle', WSF:'Washington State Ferry',
 	WTA:'Whatcom Transportation Authority'
   },
   WeekendSchedule: { 0:'Same as weekday', 1:'Reduced', 2:'None' }
@@ -725,10 +725,15 @@ function showInfoPanel(layerName, props) {
       const src = SL_META[Number(slKey)];
       const pillStyle = src ? 'background:' + src.bg + ';color:' + src.text : 'background:var(--panel2);color:var(--muted)';
       html += `<div class="transit-group-label"><span class="tgl-pill" style="${pillStyle}">${slLabel}</span><span class="tgl-line"></span></div>`;
-      // Deduplicate by route number within each ServiceLevel group
+      // Sort by Segment_RouteBound first for deterministic order,
+      // then deduplicate by resolved short label
+      const sortedRoutes = groups[slKey].slice().sort((a, b) =>
+        String(a.Segment_RouteBound ?? '').localeCompare(String(b.Segment_RouteBound ?? ''), undefined, { numeric: true, sensitivity: 'base' })
+      );
       const seenRoutes = new Set();
-      const uniqueRoutes = groups[slKey].filter(r => {
-        const key = r.Route ?? r.route;
+      const uniqueRoutes = sortedRoutes.filter(r => {
+        const info = routeLookup[r.Segment_RouteBound] ?? {};
+        const key = info.short ?? r.Route ?? r.route;
         if (seenRoutes.has(key)) return false;
         seenRoutes.add(key);
         return true;
