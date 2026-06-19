@@ -317,7 +317,8 @@ const DOMAINS = {
     108:'Regular (30 min)',
     109:'Regular (30-60 min)',
 	113:'Limited (60-90 min)',
-    116:'Limited (>90 min) or Peak Only',
+    116:'Limited (>90 min or Peak Only)',
+	117:'Very Limited (< 3 daily trips and 120 min apart)
     199:'Dial-A-Ride Transit (DART)',
 	295:'Night-owl Only',
 	296:'Summer Weekend Only', 297:'Summer Service Only', 298:'Weekend Service Only',
@@ -383,8 +384,9 @@ const SL_META = {
   108: { cat:'Regular',              bg:'#00838F', text:'#3A1E00' },
   109: { cat:'Regular',              bg:'#A7C6B3', text:'#301200' },
   113: { cat:'Limited',              bg:'#E69862', text:'#250D2C' },
-  114: { cat:'Limited (>90 min) or Peak Only', bg:'#894444', text:'#250D2C' },
-  116: { cat:'Limited (>90 min) or Peak Only', bg:'#894444', text:'#250D2C' },
+  114: { cat:'Limited (>90 min or Peak Only)', bg:'#894444', text:'#250D2C' },
+  116: { cat:'Limited (>90 min or Peak Only)', bg:'#894444', text:'#250D2C' },
+  117: { cat:'Limited (< 3 trips and 120+ min apart)', bg:'#8A2E2E', text:'#250D2C' },
   199: { cat:'Demand-responsive',    bg:'#9977CC', text:'#241545' },
   998: { cat:'No Regular Service',   bg:'#B2B2B2', text:'#250D2C' },
   999: { cat:'No Regular Service',   bg:'#B2B2B2', text:'#250D2C' },
@@ -398,7 +400,8 @@ function normalizeSL(val) {
   const v = Number(val);
   if (v === 106) return 104; // → Frequent (10-15 min)
   if (v === 207 || v === 206) return 107; // → Regular (15-30 min)
-  if (v === 114 || v === 116) return 116; // → Regular (Limited (90 min) or Peak Only)
+  if (v === 114 || v === 116) return 116; // → Limited (90 min or Peak Only)
+  if (v === 117 || v === 118) return 117; // → Limited (3 daily trips or less and 120 min apart)
   if (v === 110) return 109; // → Regular (30-60 min)
   if (v === 998 || v === 999 || (v > 294 && v < 300)) return 998; //  → No Regular Service
   return v;
@@ -921,7 +924,7 @@ function toGeoJSON(feature, geomType) {
 
 // ── Legend ───────────────────────────────────────────────────────────────────
 const DRAW_ORDER = {
-	SL: [100, 101, 102, 105, 104, 107, 108, 109, 113, 114, 116, 199, 998],
+	SL: [100, 101, 102, 105, 104, 107, 108, 109, 113, 114, 116, 117, 199, 998],
 	TROLLEY: [1, 2, 3, 4, 0],
 	BUSLANE: [7, 6, 5, 4, 2, 3, 9, 10, 1],
 };
